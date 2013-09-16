@@ -1,0 +1,24 @@
+<object class="java.util.ArrayList">
+  <method name="add">
+    <object class="ucar.unidata.idv.ViewState">
+      <property name="Name">
+        <string><![CDATA[It's a Start!]]></string>
+      </property>
+      <property name="Properties">
+        <object class="java.util.Hashtable">
+          <method name="put">
+            <string><![CDATA[matrix]]></string>
+            <parray class="double" length="16">-0.40201496288292204,-0.5303388593073927,-0.003861855354167699,0.0,0.21639894193421735,-0.1684532942859409,0.6063705431285109,0.0,-0.48419594953695577,0.3650403155169958,0.27420813353957624,0.0,0.0,0.0,0.0,1.0</parray>
+          </method>
+          <method name="put">
+            <string><![CDATA[globe]]></string>
+            <java.lang.Boolean>true</java.lang.Boolean>
+          </method>
+        </object>
+      </property>
+      <property name="ViewClassName">
+        <string><![CDATA[ucar.unidata.idv.MapViewManager]]></string>
+      </property>
+    </object>
+  </method>
+</object>

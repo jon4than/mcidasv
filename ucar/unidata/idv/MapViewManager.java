@@ -58,12 +58,10 @@ import ucar.unidata.xml.PreferenceManager;
 import ucar.unidata.xml.XmlObjectStore;
 import ucar.unidata.xml.XmlResourceCollection;
 import ucar.unidata.xml.XmlUtil;
-
 import ucar.visad.GeoUtils;
 import ucar.visad.ProjectionCoordinateSystem;
 import ucar.visad.display.DisplayMaster;
 import ucar.visad.display.LineDrawing;
-
 import visad.ConstantMap;
 import visad.ContourControl;
 import visad.Data;
@@ -76,12 +74,14 @@ import visad.Real;
 import visad.RealTupleType;
 import visad.RealType;
 import visad.VisADException;
-
 import visad.georef.EarthLocation;
 import visad.georef.EarthLocationTuple;
 import visad.georef.LatLonPoint;
 import visad.georef.MapProjection;
 import visad.georef.TrivialMapProjection;
+
+
+
 
 
 import java.awt.BorderLayout;
@@ -98,9 +98,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
-
 import java.rmi.RemoteException;
-
 import java.text.Collator;
 import java.util.*;
 
@@ -119,6 +117,9 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
@@ -3870,7 +3871,33 @@ public class MapViewManager extends NavigatedViewManager {
         }
     }
 
-
-
-
+    private static final Logger logger = LoggerFactory.getLogger(MapViewManager.class);
+    
+    public static final String PREF_GLOBE_DEFAULT_VIEWSTATE = "View.GlobeDefaultViewStateName";
+    
+    public static final String DEFAULT_GLOBE_VIEWSTATE = "It's a Start!";
+    
+    public String getDefaultGlobeViewStateName(final String defaultName) {
+        return getStore().get(PREF_GLOBE_DEFAULT_VIEWSTATE, defaultName).toString();
+    }
+    
+    @Override public void setInitViewStateName(String viewStateName) {
+        logger.trace("useGlobeDisplay={} viewStateName={}", useGlobeDisplay, viewStateName);
+        if (useGlobeDisplay) {
+            getStore().put(PREF_GLOBE_DEFAULT_VIEWSTATE, viewStateName);
+        } else {
+            super.setInitViewStateName(viewStateName);
+        }
+    }
+    
+    @Override public String getInitViewStateName() {
+        String name;
+        if (useGlobeDisplay) {
+            name = getDefaultGlobeViewStateName(DEFAULT_GLOBE_VIEWSTATE);
+        } else {
+            name = super.getInitViewStateName();
+        }
+        logger.trace("useGlobeDisplay={} viewStateName={}", useGlobeDisplay, name);
+        return name;
+    }
 }
