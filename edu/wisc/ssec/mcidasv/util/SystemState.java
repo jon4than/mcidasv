@@ -31,18 +31,20 @@ import static edu.wisc.ssec.mcidasv.util.CollectionHelpers.arrList;
 import static edu.wisc.ssec.mcidasv.util.CollectionHelpers.cast;
 import static edu.wisc.ssec.mcidasv.util.CollectionHelpers.newLinkedHashMap;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeSet;
-
 import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -54,7 +56,6 @@ import javax.media.j3d.VirtualUniverse;
 
 import org.python.core.Py;
 import org.python.core.PySystemState;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,6 @@ import ucar.unidata.idv.ArgsManager;
 import ucar.unidata.idv.IdvResourceManager.IdvResource;
 import ucar.unidata.util.ResourceCollection;
 import ucar.visad.display.DisplayUtil;
-
 import edu.wisc.ssec.mcidasv.Constants;
 import edu.wisc.ssec.mcidasv.McIDASV;
 import edu.wisc.ssec.mcidasv.StateManager;
@@ -515,7 +515,43 @@ public class SystemState {
         }
         return props;
     }
-
+    
+    /**
+     * Returns the contents of the user's {@literal "RESOLV.SRV"} file.
+     * 
+     * @param mcv The McIDASV {@literal "god"} object. Should not be {@code null}.
+     * 
+     * @return Either an empty {@code String} (if there was a problem), or the
+     * contents of {@literal "RESOLV.SRV"}.
+     */
+    public static String getResolvSrvContents(final McIDASV mcv) {
+        String resolvSrvPath = mcv.getUserFile("RESOLV.SRV");
+        BufferedInputStream stream = null;
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        byte buffer[] = new byte[8192];
+        String result = "";
+        try {
+            stream = new BufferedInputStream(new FileInputStream(resolvSrvPath));
+            int read = stream.read(buffer);
+            while (read != -1) {
+                bout.write(buffer, 0, read);
+                read = stream.read(buffer);
+            }
+            result = new String(bout.toByteArray());
+        } catch (IOException e) {
+            logger.warn("problem while reading RESOLV.SRV", e);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    logger.warn("problem while closing RESOLV.SRV", e);
+                }
+            }
+        }
+        return result;
+    }
+    
     /**
      * Builds a (filtered) subset of the McIDAS-V system properties and returns
      * the results as a {@code String}.
@@ -617,6 +653,12 @@ public class SystemState {
             for (String key : (new TreeSet<String>(mcvProps.keySet()))) {
                 buf.append(key).append('=').append(mcvProps.get(key)).append('\n');
             }
+            
+            
+            String newlineCommentWithSpace = "\n# ";
+            String resolvSrvPath = mcv.getUserFile("RESOLV.SRV");
+            String contents = getResolvSrvContents(mcv).replace("\n", newlineCommentWithSpace);
+            buf.append(newlineCommentWithSpace).append(resolvSrvPath).append(newlineCommentWithSpace).append(contents).append('\n');
         }
         return buf.toString();
     }
