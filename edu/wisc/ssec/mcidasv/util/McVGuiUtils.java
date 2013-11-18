@@ -181,14 +181,22 @@ public class McVGuiUtils implements Constants {
     /**
      * Create a standard sized, left-justified label.
      *
-     * @param title
+     * @param title Text to place within the newly created label.
      *
-     * @return
+     * @return Newly created {@link JLabel}.
      */
     public static JLabel makeLabelLeft(String title) {
         return makeLabelLeft(title, null);
     }
 
+    /**
+     *
+     *
+     * @param title
+     * @param width
+     *
+     * @return
+     */
     public static JLabel makeLabelLeft(String title, Width width) {
         if (width == null) {
             width = Width.SINGLE;
@@ -320,19 +328,24 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the width of an existing component.
+     * Set the width of an existing component to
+     * {@link edu.wisc.ssec.mcidasv.util.McVGuiUtils.Width#SINGLE}.
      *
-     * @param existingComponent
+     * @param existingComponent Component whose width is to be set.
+     * Should not be {@code null}.
      */
     public static void setComponentWidth(JComponent existingComponent) {
         setComponentWidth(existingComponent, Width.SINGLE);
     }
 
     /**
+     * Set the width of an existing {@link JComponent component} to a given
+     * width.
      *
-     *
-     * @param existingComponent
-     * @param width
+     * @param existingComponent Component whose width is to be set.
+     * Should not be {@code null}.
+     * @param width Width to use. {@code null} will be considered the same as
+     * {@link edu.wisc.ssec.mcidasv.util.McVGuiUtils.Width#SINGLE}.
      */
     public static void setComponentWidth(JComponent existingComponent, Width width) {
         if (width == null) {
@@ -375,10 +388,10 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the width of an existing component to a given int width
+     * Set the width of an existing component to a given integer width.
      *
-     * @param existingComponent
-     * @param width
+     * @param existingComponent Components whose width is to be set.
+     * @param width Width to use.
      */
     public static void setComponentWidth(JComponent existingComponent, int width) {
         existingComponent.setMinimumSize(new Dimension(width, 24));
