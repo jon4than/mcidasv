@@ -95,7 +95,7 @@ import edu.wisc.ssec.mcidasv.ui.UIManager;
  */
 public class McVGuiUtils implements Constants {
 
-    /** */
+    /** Logging object. */
     private static final Logger logger = LoggerFactory.getLogger(McVGuiUtils.class);
 
     /** 
@@ -104,6 +104,9 @@ public class McVGuiUtils implements Constants {
      */
     private static final int ESTIMATED_VM_COUNT = 32;
 
+    /**
+     * Disallow instantiation of this class.
+     */
     private McVGuiUtils() {}
 
     public enum Width { HALF, SINGLE, ONEHALF, DOUBLE, TRIPLE, QUADRUPLE, DOUBLEDOUBLE }
@@ -244,23 +247,51 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Create a sized, labeled component
+     * Create a sized, labeled component.
+     *
      * @param label
      * @param thing
+     *
      * @return
      */
     public static JPanel makeComponentLabeled(JComponent thing, String label) {
         return makeComponentLabeled(thing, new JLabel(label));
     }
 
+    /**
+     *
+     *
+     * @param thing
+     * @param label
+     * @param position
+     *
+     * @return
+     */
     public static JPanel makeComponentLabeled(JComponent thing, String label, Position position) {
         return makeComponentLabeled(thing, new JLabel(label), position);
     }
 
+    /**
+     *
+     *
+     * @param thing
+     * @param label
+     *
+     * @return
+     */
     public static JPanel makeComponentLabeled(JComponent thing, JLabel label) {
         return makeComponentLabeled(thing, label, Position.LEFT);
     }
 
+    /**
+     *
+     *
+     * @param thing
+     * @param label
+     * @param position
+     *
+     * @return
+     */
     public static JPanel makeComponentLabeled(JComponent thing, JLabel label, Position position) {
         JPanel newPanel = new JPanel();
 
@@ -289,13 +320,20 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the width of an existing component
+     * Set the width of an existing component.
+     *
      * @param existingComponent
      */
     public static void setComponentWidth(JComponent existingComponent) {
         setComponentWidth(existingComponent, Width.SINGLE);
     }
 
+    /**
+     *
+     *
+     * @param existingComponent
+     * @param width
+     */
     public static void setComponentWidth(JComponent existingComponent, Width width) {
         if (width == null) {
             width = Width.SINGLE;
@@ -1008,34 +1046,31 @@ public class McVGuiUtils implements Constants {
 
         // First pull apart the panel and see if it looks like we expect
         Component[] comps = idvButtonPanel.getComponents();
-        for (int i=0; i<comps.length; i++) {
-            if (!(comps[i] instanceof JButton)) continue;
+        for (int i = 0; i < comps.length; i++) {
+
+            if (!(comps[i] instanceof JButton)) {
+                continue;
+            }
+
             JButton button = (JButton)comps[i];
+
             if ("OK".equals(button.getText())) {
                 buttonOK = makePrettyButton(button);
-            }
-            else if ("Apply".equals(button.getText())) {
+            } else if ("Apply".equals(button.getText())) {
                 buttonApply = makePrettyButton(button);
-            }
-            else if ("Cancel".equals(button.getText())) {
+            } else if ("Cancel".equals(button.getText())) {
                 buttonCancel = makePrettyButton(button);
-            }
-            else if ("Help".equals(button.getText())) {
+            } else if ("Help".equals(button.getText())) {
                 buttonHelp = makePrettyButton(button);
-            }
-            else if ("New".equals(button.getText())) {
+            } else if ("New".equals(button.getText())) {
                 buttonNew = makePrettyButton(button);
-            }
-            else if ("Reset".equals(button.getText())) {
+            } else if ("Reset".equals(button.getText())) {
                 buttonReset = makePrettyButton(button);
-            }
-            else if ("Yes".equals(button.getText())) {
+            } else if ("Yes".equals(button.getText())) {
                 buttonYes = makePrettyButton(button);
-            }
-            else if ("No".equals(button.getText())) {
+            } else if ("No".equals(button.getText())) {
                 buttonNo = makePrettyButton(button);
-            }
-            else {
+            } else {
                 buttonList.add(button);
             }
         }
@@ -1044,36 +1079,72 @@ public class McVGuiUtils implements Constants {
         // Help, New, Reset, No, Yes, Cancel, Apply, OK
         if (System.getProperty("os.name").indexOf("Mac OS X") >= 0) {
             JPanel newButtonPanel = new JPanel();
-            if (buttonHelp!=null) newButtonPanel.add(buttonHelp);
-            if (buttonNew!=null) newButtonPanel.add(buttonNew);
-            if (buttonReset!=null) newButtonPanel.add(buttonReset);
-            if (buttonNo!=null) newButtonPanel.add(buttonNo);
-            if (buttonYes!=null) newButtonPanel.add(buttonYes);
-            if (buttonCancel!=null) newButtonPanel.add(buttonCancel);
-            if (buttonApply!=null) newButtonPanel.add(buttonApply);
-            if (buttonOK!=null) newButtonPanel.add(buttonOK);
-            if (buttonList.size() > 0) 
+            if (buttonHelp != null) {
+                newButtonPanel.add(buttonHelp);
+            }
+            if (buttonNew != null) {
+                newButtonPanel.add(buttonNew);
+            }
+            if (buttonReset != null) {
+                newButtonPanel.add(buttonReset);
+            }
+            if (buttonNo != null) {
+                newButtonPanel.add(buttonNo);
+            }
+            if (buttonYes != null) {
+                newButtonPanel.add(buttonYes);
+            }
+            if (buttonCancel != null) {
+                newButtonPanel.add(buttonCancel);
+            }
+            if (buttonApply != null) {
+                newButtonPanel.add(buttonApply);
+            }
+            if (buttonOK != null) {
+                newButtonPanel.add(buttonOK);
+            }
+
+            if (buttonList.size() > 0) {
                 return GuiUtils.right(GuiUtils.hbox(GuiUtils.hbox(buttonList), newButtonPanel));
-            else
-                return(GuiUtils.right(newButtonPanel));
+            } else {
+                return GuiUtils.right(newButtonPanel);
+            }
         }
 
         // If we are not on a Mac, this is the order (center aligned)
         // OK, Apply, Cancel, Yes, No, Reset, New, Help
         if (System.getProperty("os.name").indexOf("Mac OS X") < 0) {
             JPanel newButtonPanel = new JPanel();
-            if (buttonOK!=null) newButtonPanel.add(buttonOK);
-            if (buttonApply!=null) newButtonPanel.add(buttonApply);
-            if (buttonCancel!=null) newButtonPanel.add(buttonCancel);
-            if (buttonYes!=null) newButtonPanel.add(buttonYes);
-            if (buttonNo!=null) newButtonPanel.add(buttonNo);
-            if (buttonReset!=null) newButtonPanel.add(buttonReset);
-            if (buttonNew!=null) newButtonPanel.add(buttonNew);
-            if (buttonHelp!=null) newButtonPanel.add(buttonHelp);
-            if (buttonList.size() > 0) 
+            if (buttonOK != null) {
+                newButtonPanel.add(buttonOK);
+            }
+            if (buttonApply != null) {
+                newButtonPanel.add(buttonApply);
+            }
+            if (buttonCancel != null) {
+                newButtonPanel.add(buttonCancel);
+            }
+            if (buttonYes != null) {
+                newButtonPanel.add(buttonYes);
+            }
+            if (buttonNo != null) {
+                newButtonPanel.add(buttonNo);
+            }
+            if (buttonReset != null) {
+                newButtonPanel.add(buttonReset);
+            }
+            if (buttonNew != null) {
+                newButtonPanel.add(buttonNew);
+            }
+            if (buttonHelp != null) {
+                newButtonPanel.add(buttonHelp);
+            }
+
+            if (buttonList.size() > 0) {
                 return GuiUtils.center(GuiUtils.hbox(GuiUtils.hbox(buttonList), newButtonPanel));
-            else
-                return(GuiUtils.center(newButtonPanel));
+            } else {
+                return GuiUtils.center(newButtonPanel);
+            }
         }
 
         return idvButtonPanel;
@@ -1089,7 +1160,7 @@ public class McVGuiUtils implements Constants {
     public static List makePrettyButtons(List buttonList) {
         int size = buttonList.size();
         List newButtons = arrList(size);
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             if (buttonList.get(i) instanceof JButton) {
                 newButtons.add(makePrettyButton((JButton)(buttonList.get(i))));
             } else {
@@ -1119,54 +1190,53 @@ public class McVGuiUtils implements Constants {
      */
     public static JButton makePrettyButton(JButton button) {
         McVGuiUtils.setComponentWidth(button, Width.ONEHALF);
+
         if ("OK".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_ACCEPT_SMALL);
-        }
-        else if ("Apply".equals(button.getText())) {
+        } else if ("Apply".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_APPLY_SMALL);
-        }
-        else if ("Cancel".equals(button.getText())) {
+        } else if ("Cancel".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_CANCEL_SMALL);
-        }
-        else if ("Help".equals(button.getText())) {
+        } else if ("Help".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_HELP_SMALL);
-        }
-        else if ("New".equals(button.getText())) {
+        } else if ("New".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_ADD_SMALL);
-        }
-        else if ("Reset".equals(button.getText())) {
+        } else if ("Reset".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_UNDO_SMALL);
-        }
-        else if ("Yes".equals(button.getText())) {
+        } else if ("Yes".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_ACCEPT_SMALL);
-        }
-        else if ("No".equals(button.getText())) {
+        } else if ("No".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_CANCEL_SMALL);
-        }
-        else if ("Close".equals(button.getText())) {
+        } else if ("Close".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_CANCEL_SMALL);
-        }
-        else if ("Previous".equals(button.getText())) {
+        } else if ("Previous".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_PREVIOUS_SMALL);
-        }
-        else if ("Next".equals(button.getText())) {
+        } else if ("Next".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_NEXT_SMALL);
-        }
-        else if ("Random".equals(button.getText())) {
+        } else if ("Random".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_RANDOM_SMALL);
-        }
-        else if ("Support Form".equals(button.getText())) {
+        } else if ("Support Form".equals(button.getText())) {
             McVGuiUtils.setButtonImage(button, ICON_SUPPORT_SMALL);
         }
         return button;
     }
 
     /**
-     * Print the hierarchy of components
+     * Print the hierarchy of components.
+     *
+     * @param parent
      */
     public static void printUIComponents(JComponent parent) {
         printUIComponents(parent, 0, 0);
     }
+
+    /**
+     *
+     *
+     * @param parent
+     * @param index
+     * @param depth
+     */
     public static void printUIComponents(JComponent parent, int index, int depth) {
         if (parent == null) {
             System.err.println("McVGuiUtils.printUIComponents: null parent");
@@ -1176,13 +1246,13 @@ public class McVGuiUtils implements Constants {
         int childcount = children.length;
 
         String indent = "";
-        for (int d=0; d<depth; d++) {
+        for (int d = 0; d < depth; d++) {
             indent += "  ";
         }
         System.out.println(indent + index + ": " + parent);
 
         if (childcount > 0) {
-            for (int c=0; c<childcount; c++) {
+            for (int c = 0; c < childcount; c++) {
                 if (children[c] instanceof JComponent) {
                     printUIComponents((JComponent)children[c], c, depth+1);
                 }
