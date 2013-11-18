@@ -90,9 +90,12 @@ import edu.wisc.ssec.mcidasv.ui.McvComponentGroup;
 import edu.wisc.ssec.mcidasv.ui.McvComponentHolder;
 import edu.wisc.ssec.mcidasv.ui.UIManager;
 
-
+/**
+ *
+ */
 public class McVGuiUtils implements Constants {
 
+    /** */
     private static final Logger logger = LoggerFactory.getLogger(McVGuiUtils.class);
 
     /** 
@@ -109,17 +112,26 @@ public class McVGuiUtils implements Constants {
     public enum TextColor { NORMAL, STATUS }
 
     /**
-     * Use this class to create a panel with a background image
-     * @author davep
-     *
+     * Use this class to create a panel with a background image.
      */
     public static class IconPanel extends JPanel {
+        /** */
         private Image img;
 
+        /**
+         *
+         *
+         * @param img
+         */
         public IconPanel(String img) {
             this(GuiUtils.getImageIcon(img).getImage());
         }
 
+        /**
+         *
+         *
+         * @param img
+         */
         public IconPanel(Image img) {
             this.img = img;
             Dimension size = new Dimension(img.getWidth(null), img.getHeight(null));
@@ -130,6 +142,11 @@ public class McVGuiUtils implements Constants {
             setLayout(null);
         }
 
+        /**
+         *
+         *
+         * @param g
+         */
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             g.drawImage(img, 0, 0, null);
@@ -138,8 +155,10 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Create a standard sized, right-justified label
+     * Create a standard sized, right-justified label.
+     *
      * @param title
+     *
      * @return
      */
     public static JLabel makeLabelRight(String title) {
@@ -147,7 +166,9 @@ public class McVGuiUtils implements Constants {
     }
 
     public static JLabel makeLabelRight(String title, Width width) {
-        if (width==null) width=Width.SINGLE;
+        if (width == null) {
+            width = Width.SINGLE;
+        }
         JLabel newLabel = new JLabel(title);
         setComponentWidth(newLabel, width);
         setLabelPosition(newLabel, Position.RIGHT);
@@ -155,8 +176,10 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Create a standard sized, left-justified label
+     * Create a standard sized, left-justified label.
+     *
      * @param title
+     *
      * @return
      */
     public static JLabel makeLabelLeft(String title) {
@@ -164,7 +187,9 @@ public class McVGuiUtils implements Constants {
     }
 
     public static JLabel makeLabelLeft(String title, Width width) {
-        if (width==null) width=Width.SINGLE;
+        if (width == null) {
+            width = Width.SINGLE;
+        }
         JLabel newLabel = new JLabel(title);
         setComponentWidth(newLabel, width);
         setLabelPosition(newLabel, Position.LEFT);
@@ -172,9 +197,11 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Create a sized, labeled component
+     * Create a sized, labeled component.
+     *
      * @param label
      * @param thing
+     *
      * @return
      */
     public static JPanel makeLabeledComponent(String label, JComponent thing) {
@@ -270,8 +297,9 @@ public class McVGuiUtils implements Constants {
     }
 
     public static void setComponentWidth(JComponent existingComponent, Width width) {
-        if (width == null)
+        if (width == null) {
             width = Width.SINGLE;
+        }
 
         switch (width) {
             case HALF:
@@ -310,6 +338,7 @@ public class McVGuiUtils implements Constants {
 
     /**
      * Set the width of an existing component to a given int width
+     *
      * @param existingComponent
      * @param width
      */
@@ -320,18 +349,31 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the component width to that of another component
+     * Set the component width to that of another component.
+     *
+     * @param setme
+     * @param getme
      */
     public static void setComponentWidth(JComponent setme, JComponent getme) {
         setComponentWidth(setme, getme, 0);
     }
 
+    /**
+     *
+     *
+     * @param setme
+     * @param getme
+     * @param padding
+     */
     public static void setComponentWidth(JComponent setme, JComponent getme, int padding) {
         setme.setPreferredSize(new Dimension(getme.getPreferredSize().width + padding, getme.getPreferredSize().height));
     }
 
     /**
-     * Set the component height to that of another component
+     * Set the component height to that of another component.
+     *
+     * @param setme
+     * @param getme
      */
     public static void setComponentHeight(JComponent setme, JComponent getme) {
         setComponentHeight(setme, getme, 0);
@@ -342,13 +384,20 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the label position of an existing label
+     * Set the label position of an existing label.
+     *
      * @param existingLabel
      */
     public static void setLabelPosition(JLabel existingLabel) {
         setLabelPosition(existingLabel, Position.LEFT);
     }
 
+    /**
+     *
+     *
+     * @param existingLabel
+     * @param position
+     */
     public static void setLabelPosition(JLabel existingLabel, Position position) {
         switch (position) {
             case LEFT:
@@ -374,7 +423,8 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the bold attribute of an existing label
+     * Set the bold attribute of an existing label.
+     *
      * @param existingLabel
      * @param bold
      */
@@ -388,13 +438,20 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Set the foreground color of an existing component
+     * Set the foreground color of an existing component.
+     *
      * @param existingComponent
      */
     public static void setComponentColor(JComponent existingComponent) {
         setComponentColor(existingComponent, TextColor.NORMAL);
     }
 
+    /**
+     * Set the foreground color of an existing component to a given color.
+     *
+     * @param existingComponent
+     * @param color
+     */
     public static void setComponentColor(JComponent existingComponent, TextColor color) {
         switch (color) {
             case NORMAL:
@@ -412,7 +469,13 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Custom makeImageButton to ensure proper sizing and mouseborder are set
+     * Custom makeImageButton to ensure proper sizing and mouseborder are set.
+     *
+     * @param iconName
+     * @param object
+     * @param methodName
+     * @param arg
+     * @param tooltip
      */
     public static JButton makeImageButton(String iconName, 
             final Object object,
@@ -420,13 +483,15 @@ public class McVGuiUtils implements Constants {
             final Object arg,
             final String tooltip
     ) {
-
         final JButton btn = makeImageButton(iconName, tooltip);
         return (JButton) GuiUtils.addActionListener(btn, object, methodName, arg);
     }
 
     /**
-     * Custom makeImageButton to ensure proper sizing and mouseborder are set
+     * Custom makeImageButton to ensure proper sizing and mouseborder are set.
+     *
+     * @param iconName
+     * @param tooltip
      */
     public static JButton makeImageButton(String iconName, String tooltip) {
         boolean addMouseOverBorder = true;
@@ -451,7 +516,10 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Create a button with text and an icon
+     * Create a button with text and an icon.
+     *
+     * @param iconName
+     * @param label
      */
     public static JButton makeImageTextButton(String iconName, String label) {
         JButton newButton = new JButton(label);
@@ -461,42 +529,90 @@ public class McVGuiUtils implements Constants {
 
     /**
      * Add an icon to a button... but only if the LookAndFeel supports it
+     * @param existingButton
+     * @param iconName
      */
     public static void setButtonImage(JButton existingButton, String iconName) {
         // TODO: see if this is fixed in some future Apple Java release?
         // When using Aqua look and feel don't use icons in the buttons
         // Messes with the button vertical sizing
-        if (existingButton.getBorder().toString().indexOf("Aqua") > 0) return;
+        if (existingButton.getBorder().toString().indexOf("Aqua") > 0) {
+            return;
+        }
         ImageIcon imageIcon = GuiUtils.getImageIcon(iconName);
         existingButton.setIcon(imageIcon);
     }
 
     /**
-     * Add an icon to a menu item
+     * Add an icon to a menu item.
      */
     public static void setMenuImage(JMenuItem existingMenuItem, String iconName) {
         ImageIcon imageIcon = GuiUtils.getImageIcon(iconName);
         existingMenuItem.setIcon(imageIcon);
     }
 
+    /**
+     *
+     *
+     * @param <E>
+     *
+     * @param items
+     * @param selected
+     *
+     * @return
+     */
     public static <E> JComboBox makeComboBox(final E[] items, final Object selected) {
         return makeComboBox(CollectionHelpers.list(items), selected);
     }
 
+    /**
+     *
+     *
+     * @param <E>
+     * @param items
+     * @param selected
+     * @param width
+     *
+     * @return
+     */
     public static <E> JComboBox makeComboBox(final E[] items, final Object selected, final Width width) {
         return makeComboBox(CollectionHelpers.list(items), selected, width);
     }
 
+    /**
+     *
+     *
+     * @param items
+     * @param selected
+     *
+     * @return
+     */
     public static JComboBox makeComboBox(final Collection<?> items, final Object selected) {
         return makeComboBox(items, selected, null);
     }
-    
+
+    /**
+     *
+     *
+     * @param items
+     * @param selected
+     * @param width
+     *
+     * @return
+     */
     public static JComboBox makeComboBox(final Collection<?> items, final Object selected, final Width width) {
         JComboBox newComboBox = getEditableBox(items, selected);
         setComponentWidth(newComboBox, width);
         return newComboBox;
     }
-    
+
+    /**
+     *
+     *
+     * @param box
+     * @param items
+     * @param selected
+     */
     public static void setListData(final JComboBox box, final Collection<?> items, final Object selected) {
         box.removeAllItems();
         if (items != null) {
@@ -508,7 +624,15 @@ public class McVGuiUtils implements Constants {
             }
         }
     }
-    
+
+    /**
+     *
+     *
+     * @param items
+     * @param selected
+     *
+     * @return
+     */
     public static JComboBox getEditableBox(final Collection<?> items, final Object selected) {
         JComboBox fld = new JComboBox();
         fld.setEditable(true);
@@ -528,6 +652,14 @@ public class McVGuiUtils implements Constants {
         return makeTextField(value, null);
     }
 
+    /**
+     *
+     *
+     * @param value
+     * @param width
+     *
+     * @return
+     */
     public static JTextField makeTextField(String value, Width width) {
         JTextField newTextField = new McVTextField(value);
         setComponentWidth(newTextField, width);
@@ -535,46 +667,119 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Create some custom text entry widgets
+     * Create some custom text entry widgets.
+     *
+     * @param defaultString
+     * @param limit
+     *
+     * @return
      */
     public static McVTextField makeTextFieldLimit(String defaultString, int limit) {
         return new McVTextField(defaultString, limit);
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldUpper(String defaultString, int limit) {
         return new McVTextField(defaultString, limit, true);
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     * @param upper
+     * @param allow
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldAllow(String defaultString, int limit, boolean upper, String allow) {
         McVTextField newField = new McVTextField(defaultString, limit, upper);
         newField.setAllow(allow);
         return newField;
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     * @param upper
+     * @param deny
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldDeny(String defaultString, int limit, boolean upper, String deny) {
         McVTextField newField = new McVTextField(defaultString, limit, upper);
         newField.setDeny(deny);
         return newField;
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     * @param upper
+     * @param allow
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldAllow(String defaultString, int limit, boolean upper, char[] allow) {
         McVTextField newField = new McVTextField(defaultString, limit, upper);
         newField.setAllow(allow);
         return newField;
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     * @param upper
+     * @param deny
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldDeny(String defaultString, int limit, boolean upper, char[] deny) {
         McVTextField newField = new McVTextField(defaultString, limit, upper);
         newField.setDeny(deny);
         return newField;
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     * @param upper
+     * @param allow
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldAllow(String defaultString, int limit, boolean upper, Pattern allow) {
         McVTextField newField = new McVTextField(defaultString, limit, upper);
         newField.setAllow(allow);
         return newField;
     }
 
+    /**
+     *
+     *
+     * @param defaultString
+     * @param limit
+     * @param upper
+     * @param deny
+     *
+     * @return
+     */
     public static McVTextField makeTextFieldDeny(String defaultString, int limit, boolean upper, Pattern deny) {
         McVTextField newField = new McVTextField(defaultString, limit, upper);
         newField.setDeny(deny);
@@ -584,9 +789,11 @@ public class McVGuiUtils implements Constants {
     /**
      * Use GroupLayout for stacking components vertically
      * Set center to resize vertically
+     *
      * @param top
      * @param center
      * @param bottom
+     *
      * @return
      */
     public static JPanel topCenterBottom(JComponent top, JComponent center, JComponent bottom) {
@@ -614,20 +821,25 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Use GroupLayout for stacking components vertically
+     * Use GroupLayout for stacking components vertically.
+     *
      * @param top
      * @param bottom
      * @param which
+     *
      * @return
      */
     public static JPanel topBottom(JComponent top, JComponent bottom, Prefer which) {
         JPanel newPanel = new JPanel();
 
-        int topSize=PREFERRED_SIZE;
-        int bottomSize=PREFERRED_SIZE;
+        int topSize = PREFERRED_SIZE;
+        int bottomSize = PREFERRED_SIZE;
 
-        if (which == Prefer.TOP) topSize = Short.MAX_VALUE;
-        else if (which == Prefer.BOTTOM) topSize = Short.MAX_VALUE;
+        if (which == Prefer.TOP) {
+            topSize = Short.MAX_VALUE;
+        } else if (which == Prefer.BOTTOM) {
+            topSize = Short.MAX_VALUE;
+        }
 
         GroupLayout layout = new GroupLayout(newPanel);
         newPanel.setLayout(layout);
@@ -648,9 +860,11 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Use GroupLayout for wrapping components to stop vertical resizing
+     * Use GroupLayout for wrapping components to stop vertical resizing.
+     *
      * @param left
      * @param right
+     *
      * @return
      */
     public static JPanel sideBySide(JComponent left, JComponent right) {
@@ -658,9 +872,11 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Use GroupLayout for wrapping components to stop vertical resizing
+     * Use GroupLayout for wrapping components to stop vertical resizing.
+     *
      * @param left
      * @param right
+     *
      * @return
      */
     public static JPanel sideBySide(JComponent left, JComponent right, int gap) {
@@ -687,7 +903,9 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Use GroupLayout for wrapping a list of components horizontally
+     * Use GroupLayout for wrapping a list of components horizontally.
+     *
+     * @param components
      */
     public static JPanel horizontal(Component[] components) {
         JPanel newPanel = new JPanel();
@@ -696,8 +914,10 @@ public class McVGuiUtils implements Constants {
         newPanel.setLayout(layout);
 
         SequentialGroup hGroup = layout.createSequentialGroup();
-        for (int i=0; i<components.length; i++) {
-            if (i>0) hGroup.addGap(GAP_RELATED);
+        for (int i = 0; i < components.length; i++) {
+            if (i > 0) {
+                hGroup.addGap(GAP_RELATED);
+            }
             hGroup.addComponent(components[i], DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE);
         }
 
@@ -719,7 +939,9 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Use GroupLayout for wrapping a list of components vertically
+     * Use GroupLayout for wrapping a list of components vertically.
+     *
+     * @param components
      */
     public static JPanel vertical(Component[] components) {
         JPanel newPanel = new JPanel();
@@ -728,17 +950,21 @@ public class McVGuiUtils implements Constants {
         newPanel.setLayout(layout);
 
         ParallelGroup hGroup = layout.createParallelGroup(LEADING);
-        for (int i=0; i<components.length; i++) {
+        for (int i = 0; i < components.length; i++) {
             hGroup.addComponent(components[i], DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE);
         }
 
-        int vSize=PREFERRED_SIZE;
+        int vSize = PREFERRED_SIZE;
 
         ParallelGroup vGroup = layout.createParallelGroup(LEADING);
         SequentialGroup vInner = layout.createSequentialGroup();
-        for (int i=0; i<components.length; i++) {
-            if (i>0) vInner.addGap(GAP_RELATED);
-            if (i == components.length-1) vSize = Short.MAX_VALUE;
+        for (int i = 0; i<components.length; i++) {
+            if (i > 0) {
+                vInner.addGap(GAP_RELATED);
+            }
+            if (i == components.length-1) {
+                vSize = Short.MAX_VALUE;
+            }
             vInner.addComponent(components[i], PREFERRED_SIZE, DEFAULT_SIZE, vSize);
         }
         vGroup.addGroup(vInner);
@@ -763,6 +989,7 @@ public class McVGuiUtils implements Constants {
      * TODO: Revisit this?  Could hamper GUI performance.  But it is niiice...
      * 
      * @param idvButtonPanel
+     *
      * @return
      */
     public static JPanel makePrettyButtons(JPanel idvButtonPanel) {    	
@@ -856,6 +1083,7 @@ public class McVGuiUtils implements Constants {
      * Take a list of buttons and make them pretty
      * 
      * @param buttonList
+     *
      * @return list
      */
     public static List makePrettyButtons(List buttonList) {
@@ -872,8 +1100,10 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * Convenience method to make a button based solely on its name
+     * Convenience method to make a button based solely on its name.
+     *
      * @param name
+     *
      * @return
      */
     public static JButton makePrettyButton(String name) {
@@ -881,9 +1111,10 @@ public class McVGuiUtils implements Constants {
     }
 
     /**
-     * - Add icons when we understand the button name
+     * Add icons when we understand the button name.
      * 
      * @param button
+     *
      * @return button
      */
     public static JButton makePrettyButton(JButton button) {
@@ -988,6 +1219,11 @@ public class McVGuiUtils implements Constants {
     //    }
 
 
+    /**
+     *
+     *
+     * @return
+     */
     private static int getVMCount() {
         McIDASV mcv = McIDASV.getStaticMcv();
         int viewManagerCount = ESTIMATED_VM_COUNT;
@@ -998,6 +1234,11 @@ public class McVGuiUtils implements Constants {
         return viewManagerCount;
     }
 
+    /**
+     *
+     *
+     * @return
+     */
     private static int getHolderCount() {
         McIDASV mcv = McIDASV.getStaticMcv();
         int holderCount = ESTIMATED_VM_COUNT;
@@ -1008,6 +1249,11 @@ public class McVGuiUtils implements Constants {
         return holderCount;
     }
 
+    /**
+     *
+     *
+     * @return
+     */
     private static int getGroupCount() {
         McIDASV mcv = McIDASV.getStaticMcv();
         int groupCount = ESTIMATED_VM_COUNT;
@@ -1018,6 +1264,11 @@ public class McVGuiUtils implements Constants {
         return groupCount;
     }
 
+    /**
+     *
+     *
+     * @return
+     */
     public static List<ViewManager> getActiveViewManagers() {
         IdvWindow activeWindow = IdvWindow.getActiveWindow();
         List<ViewManager> vms;
@@ -1029,6 +1280,11 @@ public class McVGuiUtils implements Constants {
         return vms;
     }
 
+    /**
+     *
+     *
+     * @return
+     */
     public static List<ViewManager> getAllViewManagers() {
         McIDASV mcv = McIDASV.getStaticMcv();
         List<ViewManager> vms = Collections.emptyList();
@@ -1039,6 +1295,13 @@ public class McVGuiUtils implements Constants {
         return vms;
     }
 
+    /**
+     *
+     *
+     * @param window
+     *
+     * @return
+     */
     public static List<Object> getShareGroupsInWindow(final IdvWindow window) {
         List<ViewManager> vms = arrList(getVMCount());
         vms.addAll(window.getViewManagers());
@@ -1052,6 +1315,11 @@ public class McVGuiUtils implements Constants {
         return arrList(groupIds);
     }
 
+    /**
+     *
+     *
+     * @return
+     */
     public static List<Object> getAllShareGroups() {
         List<ViewManager> vms = getAllViewManagers();
         Set<Object> groupIds = newHashSet(vms.size());
@@ -1061,6 +1329,13 @@ public class McVGuiUtils implements Constants {
         return arrList(groupIds);
     }
 
+    /**
+     *
+     *
+     * @param sharedGroup
+     *
+     * @return
+     */
     public static List<ViewManager> getViewManagersInGroup(final Object sharedGroup) {
         List<ViewManager> allVMs = getAllViewManagers();
         List<ViewManager> filtered = arrList(allVMs.size());
@@ -1072,6 +1347,13 @@ public class McVGuiUtils implements Constants {
         return filtered;
     }
 
+    /**
+     *
+     *
+     * @param info
+     *
+     * @return
+     */
     public static List<ViewManager> getViewManagers(final WindowInfo info) {
         List<ViewManager> vms = arrList(getVMCount());
         for (IdvComponentHolder holder : getComponentHolders(info)) {
@@ -1080,6 +1362,13 @@ public class McVGuiUtils implements Constants {
         return vms;
     }
 
+    /**
+     *
+     *
+     * @param window
+     *
+     * @return
+     */
     public static List<ViewManager> getViewManagers(final IdvWindow window) {
         List<ViewManager> vms = arrList(getVMCount());
         vms.addAll(window.getViewManagers());
@@ -1192,7 +1481,7 @@ public class McVGuiUtils implements Constants {
 
         for (ComponentHolder comp : comps) {
             if (comp instanceof IdvComponentGroup) {
-                groups.addAll(getComponentGroups((IdvComponentGroup)comp));
+                groups.addAll(getComponentGroups((IdvComponentGroup) comp));
             }
         }
         return groups;
@@ -1360,10 +1649,20 @@ public class McVGuiUtils implements Constants {
         return groups;
     }
 
+    /**
+     *
+     * @param g
+     */
     public static void compGroup(final IdvComponentGroup g) {
         compGroup(g, 0);
     }
 
+    /**
+     *
+     *
+     * @param g
+     * @param level
+     */
     public static void compGroup(final IdvComponentGroup g, final int level) {
         p("Comp Group", level);
         p("  name=" + g.getName(), level);
@@ -1381,6 +1680,12 @@ public class McVGuiUtils implements Constants {
         }
     }
 
+    /**
+     *
+     *
+     * @param h
+     * @param level
+     */
     public static void compHolder(final IdvComponentHolder h, final int level) {
         p("Comp Holder", level);
         p("  cat=" + h.getCategory(), level);
@@ -1396,6 +1701,13 @@ public class McVGuiUtils implements Constants {
         }
     }
 
+    /**
+      
+     *
+     * @param windows
+     *
+     * @return
+     */
     public static List<ViewManager> findvms(final List<WindowInfo> windows) {
         List<ViewManager> vms = new ArrayList<ViewManager>();
         for (WindowInfo window : windows) {
@@ -1413,6 +1725,13 @@ public class McVGuiUtils implements Constants {
         return vms;
     }
 
+    /**
+     *
+     *
+     * @param vm
+     *
+     * @return
+     */
     private static String vmType(final ViewManager vm) {
         if (vm instanceof MapViewManager) {
             if (((MapViewManager)vm).getUseGlobeDisplay()) {
@@ -1424,6 +1743,14 @@ public class McVGuiUtils implements Constants {
         return "Other";
     }
 
+    /**
+     *
+     *
+     * @param str
+     * @param pad
+     *
+     * @return
+     */
     private static String pad(final String str, final int pad) {
         char[] padding = new char[pad*2];
         for (int i = 0; i < pad*2; i++) {
@@ -1432,6 +1759,12 @@ public class McVGuiUtils implements Constants {
         return new String(padding).concat(str);
     }
 
+    /**
+     *
+     *
+     * @param str
+     * @param padding
+     */
     private static void p(final String str, final int padding) {
         System.err.println(pad(str, padding));
     }
