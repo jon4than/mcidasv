@@ -50,6 +50,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
+import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -267,12 +268,19 @@ public class McvComponentGroup extends IdvComponentGroup {
      * @param dc The display control to import.
      */
     @Override public void importDisplayControl(final DisplayControlImpl dc) {
-        if (dc.getComponentHolder() != null) {
-            dc.getComponentHolder().removeDisplayControl(dc);
-        }
-        idv.getIdvUIManager().getViewPanel().removeDisplayControl(dc);
-        dc.guiImported();
-        addComponent(new McvComponentHolder(idv, dc));
+//        if (dc.getComponentHolder() != null) {
+//            dc.getComponentHolder().removeDisplayControl(dc);
+//        }
+//        idv.getIdvUIManager().getViewPanel().removeDisplayControl(dc);
+//        dc.guiImported();
+        SwingUtilities.invokeLater(() -> {
+            if (dc.getComponentHolder() != null) {
+                dc.getComponentHolder().removeDisplayControl(dc);
+            }
+            idv.getIdvUIManager().getViewPanel().removeDisplayControl(dc);
+            dc.guiImported();
+            addComponent(new McvComponentHolder(idv, dc));
+        });
     }
 
     /**
@@ -282,13 +290,22 @@ public class McvComponentGroup extends IdvComponentGroup {
      * @param root The XML skin that we'll use.
      */
     public void makeDynamicSkin(final Element root) {
-        IdvComponentHolder comp =
-            new McvComponentHolder(idv, XmlUtil.toString(root));
-
-        comp.setType(McvComponentHolder.TYPE_DYNAMIC_SKIN);
-        comp.setName("Dynamic Skin Test");
-        addComponent(comp);
-        comp.doMakeContents();
+//        IdvComponentHolder comp =
+//            new McvComponentHolder(idv, XmlUtil.toString(root));
+//
+//        comp.setType(McvComponentHolder.TYPE_DYNAMIC_SKIN);
+//        comp.setName("Dynamic Skin Test");
+//        addComponent(comp);
+//        comp.doMakeContents();
+        SwingUtilities.invokeLater(() -> {
+            IdvComponentHolder comp =
+                new McvComponentHolder(idv, XmlUtil.toString(root));
+    
+            comp.setType(McvComponentHolder.TYPE_DYNAMIC_SKIN);
+            comp.setName("Dynamic Skin Test");
+            addComponent(comp);
+            comp.doMakeContents();
+        });
     }
 
     /**
@@ -368,40 +385,76 @@ public class McvComponentGroup extends IdvComponentGroup {
      * @param what String that determines what sort of component we create.
      */
     @Override public void makeNew(final String what) {
-        try {
-            ViewManager vm = null;
-            ComponentHolder comp = null;
-            String property = "showControlLegend=false";
-            ViewDescriptor desc = new ViewDescriptor();
-
-            // we're only really interested in map, globe, or transect views.
-            if (what.equals(IdvUIManager.COMP_MAPVIEW)) {
-                vm = new MapViewManager(idv, desc, property);
-            } else if (what.equals(IdvUIManager.COMP_TRANSECTVIEW)) {
-                vm = new TransectViewManager(idv, desc, property);
-            } else if (what.equals(IdvUIManager.COMP_GLOBEVIEW)) {
-                vm = new MapViewManager(idv, desc, property);
-                ((MapViewManager)vm).setUseGlobeDisplay(true);
-            } else {
-                // hand off uninteresting things to the IDV
-                super.makeNew(what);
-                return;
-            }
-
-            // make sure we get the component into a mcv component holder,
-            // otherwise we won't be able to easily map ViewManagers to
-            // ComponentHolders for the hierarchical names in the ViewPanel.
-            idv.getVMManager().addViewManager(vm);
-            comp = new McvComponentHolder(idv, vm);
-
-            if (comp != null) {
-                addComponent(comp);
+//        try {
+//            ViewManager vm = null;
+//            ComponentHolder comp = null;
+//            String property = "showControlLegend=false";
+//            ViewDescriptor desc = new ViewDescriptor();
+//
+//            // we're only really interested in map, globe, or transect views.
+//            if (what.equals(IdvUIManager.COMP_MAPVIEW)) {
+//                vm = new MapViewManager(idv, desc, property);
+//            } else if (what.equals(IdvUIManager.COMP_TRANSECTVIEW)) {
+//                vm = new TransectViewManager(idv, desc, property);
+//            } else if (what.equals(IdvUIManager.COMP_GLOBEVIEW)) {
+//                vm = new MapViewManager(idv, desc, property);
+//                ((MapViewManager)vm).setUseGlobeDisplay(true);
+//            } else {
+//                // hand off uninteresting things to the IDV
+//                super.makeNew(what);
+//                return;
+//            }
+//
+//            // make sure we get the component into a mcv component holder,
+//            // otherwise we won't be able to easily map ViewManagers to
+//            // ComponentHolders for the hierarchical names in the ViewPanel.
+//            idv.getVMManager().addViewManager(vm);
+//            comp = new McvComponentHolder(idv, vm);
+//
+//            if (comp != null) {
+//                addComponent(comp);
+////                GuiUtils.showComponentInTabs(comp.getContents());
+//            }
+//
+//        } catch (Exception exc) {
+//            LogUtil.logException("Error making new " + what, exc);
+//        }
+        SwingUtilities.invokeLater(() -> {
+            try {
+                ViewManager vm = null;
+                ComponentHolder comp = null;
+                String property = "showControlLegend=false";
+                ViewDescriptor desc = new ViewDescriptor();
+        
+                // we're only really interested in map, globe, or transect views.
+                if (what.equals(IdvUIManager.COMP_MAPVIEW)) {
+                    vm = new MapViewManager(idv, desc, property);
+                } else if (what.equals(IdvUIManager.COMP_TRANSECTVIEW)) {
+                    vm = new TransectViewManager(idv, desc, property);
+                } else if (what.equals(IdvUIManager.COMP_GLOBEVIEW)) {
+                    vm = new MapViewManager(idv, desc, property);
+                    ((MapViewManager)vm).setUseGlobeDisplay(true);
+                } else {
+                    // hand off uninteresting things to the IDV
+                    super.makeNew(what);
+                    return;
+                }
+        
+                // make sure we get the component into a mcv component holder,
+                // otherwise we won't be able to easily map ViewManagers to
+                // ComponentHolders for the hierarchical names in the ViewPanel.
+                idv.getVMManager().addViewManager(vm);
+                comp = new McvComponentHolder(idv, vm);
+        
+                if (comp != null) {
+                    addComponent(comp);
 //                GuiUtils.showComponentInTabs(comp.getContents());
+                }
+        
+            } catch (Exception exc) {
+                LogUtil.logException("Error making new " + what, exc);
             }
-
-        } catch (Exception exc) {
-            LogUtil.logException("Error making new " + what, exc);
-        }
+        });
     }
 
     /**
@@ -444,6 +497,8 @@ public class McvComponentGroup extends IdvComponentGroup {
             }
         };
         
+        
+        // WTF WAS I THINKING HERE
         if (SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(updateGui);
         } else {
@@ -497,6 +552,23 @@ public class McvComponentGroup extends IdvComponentGroup {
         if (window != null) {
             window.setTitle(makeWindowTitle(holder.getName()));
         }
+//        McVGuiUtils.runOnEDT(() -> {
+//            if (shouldGenerateName(holder, index)) {
+//                holder.setName("untitled");
+//            }
+//
+//            if (holder.getName().trim().isEmpty()) {
+//                holder.setName("untitled");
+//            }
+//
+//            super.addComponent(holder, index);
+//            setActiveComponentHolder(holder);
+//            holder.getContents().setVisible(true);
+//
+//            if (window != null) {
+//                window.setTitle(makeWindowTitle(holder.getName()));
+//            }
+//        });
     }
 
     private boolean shouldGenerateName(final ComponentHolder h, final int i) {
@@ -525,7 +597,7 @@ public class McvComponentGroup extends IdvComponentGroup {
                     setActiveIndex(newIdx);
                 }
             });
-            
+
         }
 
         // TODO: this doesn't work quite right...
@@ -541,6 +613,22 @@ public class McvComponentGroup extends IdvComponentGroup {
 //                }
 //            });
         }
+
+//        McVGuiUtils.runOnEDT(() -> {
+//            if (getDisplayComponentCount() > 1) {
+//                int newIdx = getDisplayComponents().indexOf(holder);
+//                setActiveIndex(newIdx);
+//            }
+//
+//            // TODO: this doesn't work quite right...
+//            if (window == null) {
+//                window = IdvWindow.getActiveWindow();
+//            }
+//            if (window != null) {
+//                window.toFront();
+//                window.setTitle(makeWindowTitle(holder.getName()));
+//            }
+//        });
     }
 
     /**
@@ -783,7 +871,7 @@ public class McvComponentGroup extends IdvComponentGroup {
     @SuppressWarnings("unchecked")
     public ComponentHolder quietRemoveComponentAt(final int index) {
         List<ComponentHolder> comps = getDisplayComponents();
-        if (comps == null || comps.size() == 0) {
+        if (comps == null || comps.isEmpty()) {
             return null;
         }
         ComponentHolder removed = comps.remove(index);

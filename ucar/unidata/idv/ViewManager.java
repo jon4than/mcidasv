@@ -31,6 +31,7 @@ package ucar.unidata.idv;
 /**** BEGIN MCV ADDONS ****/
 import edu.wisc.ssec.mcidasv.Constants;
 import edu.wisc.ssec.mcidasv.ui.ColorSwatchComponent;
+import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
 import org.bushe.swing.event.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -493,7 +494,7 @@ public class ViewManager extends SharableImpl implements ActionListener,
     boolean mouseDown = false;
 
     /** List of {@link IdvLegend}s */
-    private List<IdvLegend> legends = new ArrayList();
+    private final List<IdvLegend> legends = new ArrayList();
 
     /** tracks wether the legend is shown, hidden or is floating */
     private String legendState = IdvLegend.STATE_DOCKED;
@@ -578,7 +579,7 @@ public class ViewManager extends SharableImpl implements ActionListener,
      *  This holds the list of DisplayInfos being displayed in this ViewManager.
      *  The DisplayInfo holds the Displayable and the DisplayControl.
      */
-    private List<DisplayInfo> displayInfos = new ArrayList<DisplayInfo>();
+    private final List<DisplayInfo> displayInfos = new ArrayList<DisplayInfo>();
 
     /** are we dirty ;-) */
     private boolean dirty = false;
@@ -586,7 +587,7 @@ public class ViewManager extends SharableImpl implements ActionListener,
     /**
      *  A mapping from (String) id to BooleanProperty.
      */
-    private Hashtable booleanPropertyMap = new Hashtable();
+    private final Hashtable booleanPropertyMap = new Hashtable();
 
     /** List of BooleanProperty-s */
     private List booleanProperties = new ArrayList();
@@ -597,16 +598,16 @@ public class ViewManager extends SharableImpl implements ActionListener,
     List aliases = new ArrayList();
 
     /** for making timelines component */
-    private Object TIMELINES_MUTEX = new Object();
+    private final Object TIMELINES_MUTEX = new Object();
 
     /** mutext for the display list */
-    private Object MUTEX_DISPLAYLIST = new Object();
+    private final Object MUTEX_DISPLAYLIST = new Object();
 
     /** a mutex for accessing the display master */
-    private Object MASTER_MUTEX = new Object();
+    private final Object MASTER_MUTEX = new Object();
 
     /** Just in case this synchs the legend filling */
-    private Object LEGENDMUTEX = new Object();
+    private final Object LEGENDMUTEX = new Object();
 
     /** flag for using the image panel */
     boolean usingImagePanel = false;
@@ -2093,8 +2094,8 @@ public class ViewManager extends SharableImpl implements ActionListener,
                 if (comp == null) {
                     return;
                 }
-
-                Rectangle bounds = comp.getBounds();
+                
+                Rectangle bounds = McVGuiUtils.getFromEDT(() -> comp.getBounds());
 
                 // System.out.println("window bounds: " + bounds);
                 if ((bounds.width == 0) || (bounds.height == 0)
@@ -2354,18 +2355,21 @@ public class ViewManager extends SharableImpl implements ActionListener,
      */
     protected void setBooleanProperties(ViewManager vm)
             throws VisADException, RemoteException {
-        if (booleanPropertyMap.size() == 0) {
-            initBooleanProperties();
-        }
-
-        for (int i = 0; i < booleanProperties.size(); i++) {
-            BooleanProperty myProperty =
-                (BooleanProperty) booleanProperties.get(i);
-            BooleanProperty hisProperty =
-                vm.getBooleanProperty(myProperty.getId());
-
-            if (hisProperty != null) {
-                myProperty.setValue(hisProperty.getValue());
+        
+        synchronized (booleanPropertyMap) {
+            if (booleanPropertyMap.size() == 0) {
+                initBooleanProperties();
+            }
+    
+            for (int i = 0; i < booleanProperties.size(); i++) {
+                BooleanProperty myProperty =
+                    (BooleanProperty)booleanProperties.get(i);
+                BooleanProperty hisProperty =
+                    vm.getBooleanProperty(myProperty.getId());
+        
+                if (hisProperty != null) {
+                    myProperty.setValue(hisProperty.getValue());
+                }
             }
         }
     }
@@ -2924,16 +2928,19 @@ public class ViewManager extends SharableImpl implements ActionListener,
         }
 
         // debug("\tbp: " + bp);
-        BooleanProperty existingBp =
-            (BooleanProperty) booleanPropertyMap.get(bp.getId());
-
-        if ((existingBp != null)
-                && (booleanPropertiesForPersistence == null)) {
-
-            // debug("\thave existing " + existingBp);
-            bp.setValue(existingBp.getValue());
+        synchronized (booleanPropertyMap) {
+            BooleanProperty existingBp =
+                (BooleanProperty)booleanPropertyMap.get(bp.getId());
+    
+    
+            if ((existingBp != null)
+                && (booleanPropertiesForPersistence == null))
+            {
+        
+                // debug("\thave existing " + existingBp);
+                bp.setValue(existingBp.getValue());
+            }
         }
-
         BooleanProperty newBp = new BooleanProperty(bp) {
             public void setValueInner(boolean value) throws Exception {
                 super.setValueInner(value);
@@ -2956,7 +2963,9 @@ public class ViewManager extends SharableImpl implements ActionListener,
      * @return true if it has this property
      */
     protected boolean hasBooleanProperty(String propertyId) {
-        return booleanPropertyMap.get(propertyId) != null;
+        synchronized (booleanPropertyMap) {
+            return booleanPropertyMap.get(propertyId) != null;
+        }
     }
 
     /**
@@ -2979,21 +2988,23 @@ public class ViewManager extends SharableImpl implements ActionListener,
      */
     protected BooleanProperty getBooleanProperty(String propertyId,
             boolean dflt) {
-        if (booleanPropertyMap.size() == 0) {
-            initBooleanProperties();
+        synchronized (booleanPropertyMap) {
+            if (booleanPropertyMap.size() == 0) {
+                initBooleanProperties();
+            }
+    
+            BooleanProperty bp =
+                (BooleanProperty)booleanPropertyMap.get(propertyId);
+    
+            if (bp == null) {
+                bp = new BooleanProperty(propertyId, propertyId, propertyId,
+                    dflt);
+                booleanPropertyMap.put(bp.getId(), bp);
+                initializeBooleanProperty(bp);
+            }
+    
+            return bp;
         }
-
-        BooleanProperty bp =
-            (BooleanProperty) booleanPropertyMap.get(propertyId);
-
-        if (bp == null) {
-            bp = new BooleanProperty(propertyId, propertyId, propertyId,
-                                     dflt);
-            booleanPropertyMap.put(bp.getId(), bp);
-            initializeBooleanProperty(bp);
-        }
-
-        return bp;
     }
 
     /**
@@ -3120,15 +3131,16 @@ public class ViewManager extends SharableImpl implements ActionListener,
     public Hashtable getBooleanPropertiesForPersistence() {
         Hashtable tmp = new Hashtable();
 
-        for (Iterator iter = booleanPropertyMap.values().iterator();
-                iter.hasNext(); ) {
-            BooleanProperty bp = (BooleanProperty) iter.next();
-
-            if (bp.hasValue()) {
-                tmp.put(bp.getId(), new Boolean(bp.getValue()));
+        synchronized (booleanPropertyMap) {
+            for (Iterator iter = booleanPropertyMap.values().iterator();
+                 iter.hasNext(); ) {
+                BooleanProperty bp = (BooleanProperty)iter.next();
+        
+                if (bp.hasValue()) {
+                    tmp.put(bp.getId(), new Boolean(bp.getValue()));
+                }
             }
         }
-
         return tmp;
     }
 
@@ -3237,11 +3249,13 @@ public class ViewManager extends SharableImpl implements ActionListener,
      * Some user preferences have changed.
      */
     public void applyPreferences() {
-        for (Iterator iter = booleanPropertyMap.values().iterator();
-                iter.hasNext(); ) {
-            BooleanProperty bp = (BooleanProperty) iter.next();
-
-            bp.setValue(getStore().get(bp.getId(), bp.getValue()));
+        synchronized (booleanPropertyMap) {
+            for (Iterator iter = booleanPropertyMap.values().iterator();
+                 iter.hasNext(); ) {
+                BooleanProperty bp = (BooleanProperty)iter.next();
+        
+                bp.setValue(getStore().get(bp.getId(), bp.getValue()));
+            }
         }
 
         checkToolBarVisibility();
@@ -5110,7 +5124,7 @@ public class ViewManager extends SharableImpl implements ActionListener,
         keyboardBehavior        = null;
         displayListDisplayables = null;
         animation               = null;
-        legends                 = null;
+//        legends                 = null;
         sideLegend              = null;
         sideLegendComponent     = null;
         mainSplitPane           = null;
@@ -5119,6 +5133,7 @@ public class ViewManager extends SharableImpl implements ActionListener,
         menuBar                 = null;
         fullContents            = null;
         idv                     = null;
+        legends.clear();
         displayInfos.clear();
 
     }

@@ -69,6 +69,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.AbstractAction;
@@ -145,6 +146,7 @@ import ucar.unidata.metdata.NamedStationTable;
 import ucar.unidata.ui.ComponentHolder;
 import ucar.unidata.ui.HttpFormEntry;
 import ucar.unidata.ui.LatLonWidget;
+import ucar.unidata.ui.MultiFrame;
 import ucar.unidata.ui.RovingProgress;
 import ucar.unidata.ui.XmlUi;
 import ucar.unidata.util.GuiUtils;
@@ -271,7 +273,6 @@ public class UIManager extends IdvUIManager implements ActionListener {
     private final Map<Integer, String> skinToTitle = new ConcurrentHashMap<>();
 
     /** Maps menu IDs to {@link JMenu}s. */
-//    private Hashtable<String, JMenu> menuIds;
     private Hashtable<String, JMenuItem> menuIds;
 
     /** The splash screen (minus easter egg). */
@@ -321,55 +322,66 @@ public class UIManager extends IdvUIManager implements ActionListener {
         boolean notifyCollab, String title, String skinPath, Element skinRoot,
         boolean show, WindowInfo windowInfo) 
     {
-
-        if (windowInfo != null) {
-            logger.trace("creating window: title='{}' bounds: {}", title, windowInfo.getBounds());
-        } else {
-            logger.trace("creating window: title='{}' bounds: (no windowinfo)", title);
-        }
-        
-        if (Constants.DATASELECTOR_NAME.equals(title)) {
-            show = false;
-        }
-        if (skinPath.contains("dashboard.xml")) {
-            show = false;
-        }
-
-        // used to force any new "display" windows to be the same size as the current window.
-        IdvWindow previousWindow = IdvWindow.getActiveWindow();
-
-        IdvWindow w = super.createNewWindow(viewManagers, notifyCollab, title, 
-            skinPath, skinRoot, show, windowInfo);
-
-        String iconPath = idv.getProperty(Constants.PROP_APP_ICON, null);
-        ImageIcon icon = GuiUtils.getImageIcon(iconPath, getClass(), true);
-        w.setIconImage(icon.getImage());
-
-        // try to catch the dashboard
-        if (Constants.DATASELECTOR_NAME.equals(w.getTitle())) {
-            setDashboard(w);
-        } else if (!w.getComponentGroups().isEmpty()) {
-            // otherwise we need to hide the component group header and explicitly
-            // set the size of the window.
-            w.getComponentGroups().get(0).setShowHeader(false);
-            if (previousWindow != null) {
-                Rectangle r = previousWindow.getBounds();
-                
-                w.setBounds(new Rectangle(r.x, r.y, r.width, r.height));
+        Callable<IdvWindow> makeWindow = () -> {
+            if (windowInfo != null) {
+                logger.trace("creating window: title='{}' bounds: {}", title, windowInfo.getBounds());
+            } else {
+                logger.trace("creating window: title='{}' bounds: (no windowinfo)", title);
             }
-        } else {
-            logger.trace("creating window with no component groups");
-        }
-
-        initDisplayShortcuts(w);
-
-        RovingProgress progress =
-            (RovingProgress)w.getComponent(IdvUIManager.COMP_PROGRESSBAR);
-
-        if (progress != null) {
-            progress.start();
-        }
-        return w;
+    
+            boolean realShow;
+            if (Constants.DATASELECTOR_NAME.equals(title)) {
+                realShow = false;
+            } // just playin' y'all
+            else if (!initDone) {
+                logger.trace("haven't finished starting mcv, not showing " +
+                    "window yet!");
+                realShow = false;
+            } // done!
+            else if (skinPath.contains("dashboard.xml")) {
+                realShow = false;
+            } else {
+                realShow = show;
+            }
+    
+            // used to force any new "display" windows to be the same size as the current window.
+            IdvWindow previousWindow = IdvWindow.getActiveWindow();
+            
+            IdvWindow w = super.createNewWindow(viewManagers, notifyCollab, title,
+                skinPath, skinRoot, realShow, windowInfo);
+            logger.trace("new window: {}, viz: {} isShowing: {}", w, w
+                .isVisible(), w.isShowing());
+            String iconPath = idv.getProperty(Constants.PROP_APP_ICON, null);
+            ImageIcon icon = GuiUtils.getImageIcon(iconPath, getClass(), true);
+            w.setIconImage(icon.getImage());
+    
+            // try to catch the dashboard
+            if (Constants.DATASELECTOR_NAME.equals(w.getTitle())) {
+                setDashboard(w);
+            } else if (!w.getComponentGroups().isEmpty()) {
+                // otherwise we need to hide the component group header and explicitly
+                // set the size of the window.
+                w.getComponentGroups().get(0).setShowHeader(false);
+                if (previousWindow != null) {
+                    Rectangle r = previousWindow.getBounds();
+            
+                    w.setBounds(new Rectangle(r.x, r.y, r.width, r.height));
+                }
+            } else {
+                logger.trace("creating window with no component groups");
+            }
+    
+            initDisplayShortcuts(w);
+    
+            RovingProgress progress =
+                (RovingProgress)w.getComponent(IdvUIManager.COMP_PROGRESSBAR);
+    
+            if (progress != null) {
+                progress.start();
+            }
+            return w;
+        };
+        return McVGuiUtils.getFromEDT(makeWindow);
     }
 
     /**
@@ -465,20 +477,23 @@ public class UIManager extends IdvUIManager implements ActionListener {
 
             public void componentShown(final ComponentEvent e) { 
                 Boolean saveViz = (Boolean)state.getPreference(Constants.PREF_SAVE_DASHBOARD_VIZ, Boolean.FALSE);
-                if (saveViz)
+                if (saveViz) {
                     state.putPreference(Constants.PROP_SHOWDASHBOARD, true);
+                }
             }
 
             public void componentHidden(final ComponentEvent e) {
                 Boolean saveViz = (Boolean)state.getPreference(Constants.PREF_SAVE_DASHBOARD_VIZ, Boolean.FALSE);
-                if (saveViz)
+                if (saveViz) {
                     state.putPreference(Constants.PROP_SHOWDASHBOARD, false);
+                }
             }
         });
 
         Rectangle bounds = (Rectangle)state.getPreferenceOrProperty(Constants.PROP_DASHBOARD_BOUNDS);
-        if (bounds != null)
+        if (bounds != null) {
             comp.setBounds(bounds);
+        }
     }
 
     /**
@@ -566,12 +581,12 @@ public class UIManager extends IdvUIManager implements ActionListener {
         long lastActivatedTime = -1;
         
         for (ViewManager viewManager : viewManagers) {
-            if (viewManager.getContents() == null)
+            if (viewManager.getContents() == null) {
                 continue;
-            
-            if (!viewManager.getContents().isVisible())
+            }
+            if (!viewManager.getContents().isVisible()) {
                 continue;
-            
+            }
             lastActiveFrame = window;
             
             if (viewManager.getLastTimeActivated() > lastActivatedTime) {
@@ -836,13 +851,13 @@ public class UIManager extends IdvUIManager implements ActionListener {
      * @return Formatted window title.
      */
     protected static String makeTitle(final String win, final String doc) {
-        if (win == null)
+        if (win == null) {
             return "";
-        else if (doc == null)
+        } else if (doc == null) {
             return win;
-        else if (doc.equals("untitled"))
+        } else if (doc.equals("untitled")) {
             return win;
-
+        }
         return win.concat(TITLE_SEPARATOR).concat(doc);
     }
 
@@ -861,9 +876,9 @@ public class UIManager extends IdvUIManager implements ActionListener {
     protected static String makeTitle(final String window,
         final String document, final String other) 
     {
-        if (other == null)
+        if (other == null) {
             return makeTitle(window, document);
-
+        }
         return window.concat(TITLE_SEPARATOR).concat(document).concat(
             TITLE_SEPARATOR).concat(other);
     }
@@ -899,12 +914,7 @@ public class UIManager extends IdvUIManager implements ActionListener {
      * @see ucar.unidata.idv.ui.IdvUIManager#about()
      */
     public void about() {
-        java.awt.EventQueue.invokeLater(() -> {
-            AboutFrame frame = new AboutFrame((McIDASV)idv);
-            // pop up the window right away; the system information tab won't
-            // be populated until the user has selected the tab.
-            frame.setVisible(true);
-        });
+        new AboutFrame((McIDASV)idv).setVisible(true);
     }
 
     /**
@@ -944,31 +954,31 @@ public class UIManager extends IdvUIManager implements ActionListener {
         }
 
         // handle the user toggling the size of the icon
-        else if (cmd.startsWith(ACT_ICON_TYPE))
+        else if (cmd.startsWith(ACT_ICON_TYPE)) {
             toolbarEditEvent = true;
-
+        }
         // handle the user removing displays
-        else if (cmd.startsWith(ACT_REMOVE_DISPLAYS))
+        else if (cmd.startsWith(ACT_REMOVE_DISPLAYS)) {
             idv.removeAllDisplays();
-
+        }
         // handle popping up the dashboard.
-        else if (cmd.startsWith(ACT_SHOW_DASHBOARD))
+        else if (cmd.startsWith(ACT_SHOW_DASHBOARD)) {
             showDashboard();
-
+        }
         // handle popping up the data explorer.
-        else if (cmd.startsWith(ACT_SHOW_DATASELECTOR))
+        else if (cmd.startsWith(ACT_SHOW_DATASELECTOR)) {
             showDashboard("Data Sources");
-
+        }
         // handle popping up the display controller.
-        else if (cmd.startsWith(ACT_SHOW_DISPLAYCONTROLLER))
+        else if (cmd.startsWith(ACT_SHOW_DISPLAYCONTROLLER)) {
             showDashboard("Layer Controls");
-
-        else
+        }
+        else {
             System.err.println("Unsupported action event!");
-
+        }
         // if the user did something to change the toolbar, hide the current
         // toolbar, replace it, and then make the new toolbar visible.
-        if (toolbarEditEvent == true) {
+        if (toolbarEditEvent) {
 
             getStateManager().writePreference(PROP_ICON_SIZE, 
                 currentToolbarStyle.getSizeAsString());
@@ -1270,7 +1280,7 @@ public class UIManager extends IdvUIManager implements ActionListener {
      */
     @Override public JComponent getToolbarUI() {
         if (toolbars == null) {
-            toolbars = new LinkedList<JToolBar>();
+            toolbars = new LinkedList<>();
         }
         JToolBar toolbar = new JToolBar();
         populateToolbar(toolbar);
@@ -1434,11 +1444,7 @@ public class UIManager extends IdvUIManager implements ActionListener {
 
         button.setToolTipText("Show Favorites category: " + node.getName());
 
-        button.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                popup.show(button, 0, button.getHeight());
-            }
-        });
+        button.addActionListener(e -> popup.show(button, 0, button.getHeight()));
 
         toolbar.add(button);
 
@@ -1540,13 +1546,15 @@ public class UIManager extends IdvUIManager implements ActionListener {
     protected Icon getActionIcon(final String actionId, 
         final ToolbarStyle style) 
     {
-        if (actionId == null)
+        if (actionId == null) {
             throw new NullPointerException("Action ID cannot be null");
+        }
 
         Icon actionIcon = idvActions.getStyledIconFor(actionId, style);
-        if (actionIcon != null)
+        if (actionIcon != null) {
             return actionIcon;
-
+        }
+        
         String icon = "/edu/wisc/ssec/mcidasv/resources/icons/toolbar/range-bearing%d.png";
         URL tmp = getClass().getResource(String.format(icon, style.getSize()));
         return new ImageIcon(tmp);
@@ -1828,19 +1836,24 @@ public class UIManager extends IdvUIManager implements ActionListener {
             JMenuItem mi = new JMenuItem(node.getName());
             final SavedBundle theBundle = node.getBundle();
 
-            mi.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ae) {
-                    //Do it in a thread
-                    Misc.run(UIManager.this, "processBundle", theBundle);
-                }
+            mi.addActionListener(ae -> {
+                //Do it in a thread
+                Misc.run(UIManager.this, "processBundle", theBundle);
             });
 
             comp.add(mi);
         }
     }
 
+    @Override public void init() {
+        McVGuiUtils.runOnEDT(super::init);
+    }
+    
     @Override public void initDone() {
+        logger.trace("INIT DONE THREAD!?");
         super.initDone();
+//        McVGuiUtils.runOnEDT(() -> IdvWindow.getMainWindows().forEach(MultiFrame::pack));
+
         if (getStore().get(Constants.PREF_VERSION_CHECK, true)) {
             StateManager stateManager = (StateManager)getStateManager();
             stateManager.checkForNewerVersion(false);
@@ -1853,6 +1866,18 @@ public class UIManager extends IdvUIManager implements ActionListener {
         initDone = true;
         showDashboard();
     }
+    
+    @Override public boolean showBasicWindow(boolean createIfNotPresent) {
+        logger.trace("IS THIS RUNNING WHEN EXPECTED!? {}", createIfNotPresent);
+        return super.showBasicWindow(createIfNotPresent);
+    }
+    
+    @Override public IdvWindow createNewWindow(List viewManagers,
+                                               String skinPath)
+    {
+        logger.trace("HOW ABOUT THIS ONE");
+        return super.createNewWindow(viewManagers, skinPath);
+    }
 
     /**
      * Create the splash screen if needed
@@ -1862,10 +1887,15 @@ public class UIManager extends IdvUIManager implements ActionListener {
                 && !getArgsManager().getNoGui()
                 && !getArgsManager().getIsOffScreen()
                 && !getArgsManager().testMode) {
-            splash = new McvSplash(idv);
-            splashMsg("Loading Programs");
+            McVGuiUtils.runOnEDT(() -> {
+                splash = new McvSplash(idv);
+                splashMsg("Loading Programs");
+            });
         }
     }
+    
+    /** Help tip dialog. */
+    private McvHelpTipDialog helpTipDialog;
     
     /**
      *  Create (if null)  and show the HelpTipDialog. If checkPrefs is true
@@ -1873,10 +1903,11 @@ public class UIManager extends IdvUIManager implements ActionListener {
      *
      * @param checkPrefs Should the user preferences be checked
      */
-    /** THe help tip dialog */
-    private McvHelpTipDialog helpTipDialog;
-
     public void initHelpTips(boolean checkPrefs) {
+        logger.trace("NO-OP so that we can show the help tips properly");
+    }
+    
+    public void reallyShowHelpTips(boolean checkPrefs) {
         try {
             if (getIdv().getArgsManager().getIsOffScreen()) {
                 return;
@@ -1887,16 +1918,23 @@ public class UIManager extends IdvUIManager implements ActionListener {
                 }
             }
             if (helpTipDialog == null) {
-                IdvResourceManager resourceManager = getResourceManager();
-                helpTipDialog = new McvHelpTipDialog(
-                    resourceManager.getXmlResources(
-                        resourceManager.RSC_HELPTIPS), getIdv(), getStore(),
-                            getIdvClass(),
-                            getStore().get(
-                                McvHelpTipDialog.PREF_HELPTIPSHOW, true));
+                McVGuiUtils.runOnEDT(() -> {
+                    IdvResourceManager resourceManager = getResourceManager();
+                    helpTipDialog = new McvHelpTipDialog(
+                        resourceManager.getXmlResources(resourceManager.RSC_HELPTIPS),
+                        getIdv(),
+                        getStore(),
+                        getIdvClass(),
+                        getStore().get(McvHelpTipDialog.PREF_HELPTIPSHOW, true));
+                    helpTipDialog.setVisible(true);
+                });
+            } else {
+                McVGuiUtils.runOnEDT(() -> {
+                    helpTipDialog.setVisible(true);
+                    GuiUtils.toFront(helpTipDialog);
+                });
             }
-            helpTipDialog.setVisible(true);
-            GuiUtils.toFront(helpTipDialog);
+        
         } catch (Throwable excp) {
             logException("Reading help tips", excp);
         }
@@ -1931,11 +1969,7 @@ public class UIManager extends IdvUIManager implements ActionListener {
         McVGuiUtils.setMenuImage(mi, Constants.ICON_FAVORITEMANAGE_SMALL);
         mi.setMnemonic(GuiUtils.charToKeyCode("M"));
         inBundleMenu.add(mi);
-        mi.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                showBundleDialog(bundleType);
-            }
-        });
+        mi.addActionListener(ae -> showBundleDialog(bundleType));
 
         final List bundles = getPersistenceManager().getBundles(bundleType);
         if (bundles.isEmpty()) {
@@ -1974,11 +2008,9 @@ public class UIManager extends IdvUIManager implements ActionListener {
 
             final SavedBundle theBundle = bundle;
             mi = new JMenuItem(bundle.getName());
-            mi.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ae) {
-                    //Do it in a thread
-                    Misc.run(UIManager.this, "processBundle", theBundle);
-                }
+            mi.addActionListener(ae -> {
+                //Do it in a thread
+                Misc.run(UIManager.this, "processBundle", theBundle);
             });
             catMenu.add(mi);
         }
@@ -2030,11 +2062,7 @@ public class UIManager extends IdvUIManager implements ActionListener {
 
             if (window.isVisible()) {
                 mi = new JMenuItem(title);
-                mi.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent ae) {
-                        window.toFront();
-                    }
-                });
+                mi.addActionListener(ae -> window.toFront());
 
                 if (first) {
                     windowMenu.addSeparator();
@@ -2350,12 +2378,19 @@ public class UIManager extends IdvUIManager implements ActionListener {
 
                     mi.addActionListener(ae -> {
                         if (!inWindow) {
-                            createNewTab(skinid);
+                            SwingUtilities.invokeLater(() -> createNewTab(skinid));
+//                            createNewTab(skinid);
                         } else {
-                            createNewWindow(null, true,
-                                getStateManager().getTitle(), skins.get(
-                                    skinIndex).toString(), skins.getRoot(
-                                    skinIndex, false), inWindow, null);
+                            SwingUtilities.invokeLater(() -> {
+                                createNewWindow(null, true,
+                                    getStateManager().getTitle(), skins.get(
+                                        skinIndex).toString(), skins.getRoot(
+                                        skinIndex, false), inWindow, null);
+                            });
+//                            createNewWindow(null, true,
+//                                getStateManager().getTitle(), skins.get(
+//                                    skinIndex).toString(), skins.getRoot(
+//                                    skinIndex, false), inWindow, null);
                         }
                     });
                     theMenu.add(mi);
@@ -2651,10 +2686,9 @@ public class UIManager extends IdvUIManager implements ActionListener {
     /**
      * Close and dispose of the splash window (if it has been created).
      */
-    @Override
-    public void splashClose() {
+    @Override public void splashClose() {
         if (splash != null) {
-            splash.doClose();
+            McVGuiUtils.runOnEDT(() -> splash.doClose());
         }
     }
 
@@ -2665,7 +2699,7 @@ public class UIManager extends IdvUIManager implements ActionListener {
      */
     @Override public void splashMsg(String m) {
         if (splash != null) {
-            splash.splashMsg(m);
+            McVGuiUtils.runOnEDT(() -> splash.splashMsg(m));
         }
     }
 

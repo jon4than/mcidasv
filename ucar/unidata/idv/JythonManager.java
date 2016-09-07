@@ -85,6 +85,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.concurrent.Callable;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -106,6 +107,7 @@ import javax.swing.text.JTextComponent;
 import edu.wisc.ssec.mcidasv.McIDASV;
 import edu.wisc.ssec.mcidasv.ui.JythonEditor;
 import edu.wisc.ssec.mcidasv.util.FileFinder;
+import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
 import edu.wisc.ssec.mcidasv.util.pathwatcher.OnFileChangeListener;
 
 import org.python.core.Py;
@@ -513,7 +515,7 @@ public class JythonManager extends IdvManager implements ActionListener,
                 LogUtil.userMessage("No Jython resources defined");
                 return null;
             }
-            treePanel  = new TreePanel();
+            treePanel = McVGuiUtils.getFromEDT(() -> new TreePanel());
             libHolders = new ArrayList<>(resources.size() * 10);
             int systemCnt = 1;
             Map<String, String> seen = new HashMap<>();
@@ -527,9 +529,6 @@ public class JythonManager extends IdvManager implements ActionListener,
                 List files;
                 File file = new File(path);
                 if (file.exists() && file.isDirectory()) {
-//                    File[] libFiles = file.listFiles((java.io.FileFilter)new PatternFileFilter(".*\\.py$"));
-//                    files.addAll(toList(libFiles));
-//                    files = toList(libFiles);
                     files = FileFinder.findFiles(file.getPath(), "*.py");
                 } else {
                     files = new ArrayList();
@@ -554,40 +553,48 @@ public class JythonManager extends IdvManager implements ActionListener,
                     if ((text != null) && Misc.isHtml(text)) {
                         continue;
                     }
-                    LibHolder libHolder;
                     boolean editable = resources.isWritableResource(i) || (file.exists() && file.canWrite());
                     if (!editable && (new File(path).isDirectory() || (text == null))) {
                         continue;
                     }
 
-                    libHolder = makeLibHolder(editable, label, path, text);
-                    String category = resources.getProperty("category", i);
-                    String treeCategory = null;
-                    if (libHolder.isEditable()) {
-                        treeCategory = "Local Jython";
-                    } else if (category != null) {
-                        treeCategory = category;
-                    }
-                    treePanel.addComponent(libHolder.outerContents, treeCategory, label, null);
+                    final String tmpLabel = label;
+                    final String tmpPath = path;
+                    final int index = i;
+                    SwingUtilities.invokeLater(() -> {
+                        LibHolder libHolder = makeLibHolder(editable, tmpLabel, tmpPath, text);
+                        String category = resources.getProperty("category", index);
+                        String treeCategory = null;
+                        if (libHolder.isEditable()) {
+                            treeCategory = "Local Jython";
+                        } else if (category != null) {
+                            treeCategory = category;
+                        }
+                        treePanel.addComponent(libHolder.outerContents, treeCategory, tmpLabel, null);
+                    });
                 }
             }
             String tmpPath = getIdv().getStore().getTmpFile("tmp.py");
-            tmpHolder = makeLibHolder(false, "Temporary Jython", tmpPath, "");
-            treePanel.addComponent(tmpHolder.outerContents, null, "Temporary", null);
-            JMenuBar menuBar = new JMenuBar();
-            JMenu fileMenu = makeDynamicMenu("File", this, "makeFileMenu");
-            JMenu helpMenu = new JMenu("Help");
-            menuBar.add(fileMenu);
-            menuBar.add(helpMenu);
-            helpMenu.add(makeMenuItem("Show Jython Help", this, "showHelp"));
-            textSearcher = new TextSearcher() {
-                @Override public TextSearcher.TextWrapper getTextWrapper() {
-                    return findVisibleComponent();
-                }
+    
+            Callable<JComponent> makeContents = () -> {
+                tmpHolder = makeLibHolder(false, "Temporary Jython", tmpPath, "");
+                treePanel.addComponent(tmpHolder.outerContents, null, "Temporary", null);
+                JMenuBar menuBar = new JMenuBar();
+                JMenu fileMenu = makeDynamicMenu("File", this, "makeFileMenu");
+                JMenu helpMenu = new JMenu("Help");
+                menuBar.add(fileMenu);
+                menuBar.add(helpMenu);
+                helpMenu.add(makeMenuItem("Show Jython Help", this, "showHelp"));
+                textSearcher = new TextSearcher() {
+                    @Override public TextSearcher.TextWrapper getTextWrapper() {
+                        return findVisibleComponent();
+                    }
+                };
+                contents = topCenterBottom(menuBar, treePanel, textSearcher);
+                setMenuBar(menuBar);
+                return contents;
             };
-            contents = topCenterBottom(menuBar, treePanel, textSearcher);
-            setMenuBar(menuBar);
-            return contents;
+            return McVGuiUtils.getFromEDT(makeContents);
         } catch (Throwable exc) {
             logException("Creating jython editor", exc);
             return null;
@@ -644,9 +651,7 @@ public class JythonManager extends IdvManager implements ActionListener,
      * 
      * @throws VisADException On badness
      */
-    private LibHolder makeLibHolder(boolean editable, String label, String path, String text)
-            throws VisADException 
-    {
+    private LibHolder makeLibHolder(boolean editable, String label, String path, String text) {
         final LibHolder[] holderArray  = { null };
         JythonEditor jythonEditor = new JythonEditor() {
             @Override public void undoableEditHappened(UndoableEditEvent e) {
@@ -820,7 +825,10 @@ public class JythonManager extends IdvManager implements ActionListener,
                     continue;
                 }
                 writeFile(fullName, "");
-                LibHolder libHolder = makeLibHolder(true, name, fullName, "");
+                final String tmpName = name;
+                final String tmpFullName = fullName;
+                LibHolder libHolder =
+                    McVGuiUtils.getFromEDT(() -> makeLibHolder(true, tmpName, tmpFullName, ""));
                 treePanel.addComponent(libHolder.outerContents, "Local Jython", name, null);
                 break;
             }
@@ -835,7 +843,8 @@ public class JythonManager extends IdvManager implements ActionListener,
         String name = p.getFileName().toString();
         try {
             String contents = readContents(p.toFile());
-            LibHolder holder = makeLibHolder(true, name, path, contents);
+//            LibHolder holder = makeLibHolder(true, name, path, contents);
+            LibHolder holder = McVGuiUtils.getFromEDT(() -> makeLibHolder(true, name, path, contents));
             treePanel.addComponent(holder.outerContents, "Local Jython", name, null);
             evaluateLibJython(false, holder);
         } catch (Exception e) {
@@ -2300,7 +2309,7 @@ public class JythonManager extends IdvManager implements ActionListener,
          * @return text
          */
         public String getText() {
-            return pythonEditor.getText();
+            return McVGuiUtils.getFromEDT(() -> pythonEditor.getText());
         }
         
         /**

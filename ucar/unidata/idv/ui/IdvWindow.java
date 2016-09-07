@@ -28,25 +28,32 @@
 
 package ucar.unidata.idv.ui;
 
-
-import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
-import ucar.unidata.idv.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ucar.unidata.idv.IntegratedDataViewer;
+import ucar.unidata.idv.ViewManager;
 import ucar.unidata.ui.ComponentGroup;
-import ucar.unidata.ui.IndependentWindow;
 import ucar.unidata.ui.MultiFrame;
 import ucar.unidata.ui.RovingProgress;
 import ucar.unidata.util.GuiUtils;
 import ucar.unidata.util.LogUtil;
 import ucar.unidata.util.Misc;
 
-
 import ucar.unidata.util.Removable;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Frame;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.Window;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Method;
 
 import java.util.ArrayList;
@@ -54,10 +61,15 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 
-import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.WindowConstants;
 
-
+import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
 
 /**
  * The window class used for the IDV. Really need to break this out into
@@ -104,13 +116,13 @@ public class IdvWindow extends MultiFrame {
 
 
     /** List of all active IdvWindow objects */
-    private static ArrayList allWindows = new ArrayList();
+    private static List<IdvWindow> allWindows = new ArrayList<>();
 
     /**
      * List of the main windows. The main windows are the ones we look at when
      * we  exit when there are no more windows up.
      */
-    private static ArrayList mainWindows = new ArrayList();
+    private static List<IdvWindow> mainWindows = new ArrayList<>();
 
     /** Keep track of the last active window */
     private static IdvWindow lastActiveWindow;
@@ -130,10 +142,10 @@ public class IdvWindow extends MultiFrame {
 
 
     /** A mapping of named component to component */
-    private Hashtable components = new Hashtable();
+    private Hashtable<String, Object> components = new Hashtable<>();
 
     /** The view managers that are displayed in this window */
-    private List viewManagers = new ArrayList();
+    private List<ViewManager> viewManagers = new ArrayList<>();
 
 
     /** Am I spinning */
@@ -147,10 +159,10 @@ public class IdvWindow extends MultiFrame {
     private String type = "";
 
     /** The groups within this window */
-    private Hashtable groups = new Hashtable();
+    private Hashtable<Object, Object> groups = new Hashtable<>();
 
     /** _more_ */
-    private Hashtable persistentComponents = new Hashtable();
+    private Hashtable<Object, Object> persistentComponents = new Hashtable<>();
 
     /**
      * Create the window
@@ -209,6 +221,12 @@ public class IdvWindow extends MultiFrame {
               }
             }
             public void windowActivated(WindowEvent e) {
+                if (lastActiveWindow != null) {
+                    String old = Integer.toHexString(lastActiveWindow.hashCode());
+                    String me = Integer.toHexString(IdvWindow.this.hashCode());
+                    logger.trace("old: {}, new: {}", old, me);
+                    logger.trace("event: {}", e);
+                }
                 lastActiveWindow = IdvWindow.this;
             }
         });
@@ -232,7 +250,8 @@ public class IdvWindow extends MultiFrame {
         });
         /*** end inquiry 1837 changes ***/
     }
-
+    
+    private static final Logger logger = LoggerFactory.getLogger(IdvWindow.class);
 
     /**
      * Get the current active window
@@ -294,7 +313,6 @@ public class IdvWindow extends MultiFrame {
         }
     }
 
-
     /**
      * set the bounds of the window
      *
@@ -323,7 +341,7 @@ public class IdvWindow extends MultiFrame {
         while (parent != null) {
             if (parent instanceof Window) {
                 for (int i = 0; i < allWindows.size(); i++) {
-                    IdvWindow idvWindow = (IdvWindow) allWindows.get(i);
+                    IdvWindow idvWindow = allWindows.get(i);
                     if (idvWindow.getFrame() == parent) {
                         return idvWindow;
                     }
@@ -331,7 +349,7 @@ public class IdvWindow extends MultiFrame {
             }
             if (parent instanceof JInternalFrame) {
                 for (int i = 0; i < allWindows.size(); i++) {
-                    IdvWindow idvWindow = (IdvWindow) allWindows.get(i);
+                    IdvWindow idvWindow = allWindows.get(i);
                     if (idvWindow.getInternalFrame() == parent) {
                         return idvWindow;
                     }
@@ -522,7 +540,8 @@ public class IdvWindow extends MultiFrame {
         RovingProgress progress =
             (RovingProgress) getComponent(IdvUIManager.COMP_PROGRESSBAR);
         if (progress != null) {
-            progress.start();
+//            progress.start();
+            McVGuiUtils.runOnEDT(progress::start);
         }
     }
 
@@ -535,7 +554,8 @@ public class IdvWindow extends MultiFrame {
         RovingProgress progress =
             (RovingProgress) getComponent(IdvUIManager.COMP_PROGRESSBAR);
         if (progress != null) {
-            progress.stop();
+            McVGuiUtils.runOnEDT(progress::stop);
+//            progress.stop();
         }
     }
 
@@ -545,12 +565,13 @@ public class IdvWindow extends MultiFrame {
      * @param icon The wait icon.
      */
     public void setWaitIcon(Icon icon) {
-        JLabel waitLbl = getWaitLabel();
-        if (waitLbl != null) {
-            waitLbl.setIcon(icon);
-            waitLbl.repaint();
-        }
-
+        McVGuiUtils.runOnEDT(() -> {
+            JLabel waitLbl = getWaitLabel();
+            if (waitLbl != null) {
+                waitLbl.setIcon(icon);
+                waitLbl.repaint();
+            }
+        });
     }
 
     /**
@@ -594,62 +615,64 @@ public class IdvWindow extends MultiFrame {
      * Dispose of this window.
      */
     public void dispose() {
-        if (hasBeenDisposed) {
-            return;
-        }
-        hasBeenDisposed = true;
-
-        if (lastActiveWindow == this) {
-            lastActiveWindow = null;
-        }
-
-        idv.getIdvUIManager().removeWindow(this);
-
-        for (Removable removable : removables) {
-            removable.doRemove();
-        }
-        removables = null;
-
-        JMenuBar menuBar = (JMenuBar) getComponent(IdvUIManager.COMP_MENUBAR);
-        if (menuBar != null) {
-            GuiUtils.empty(menuBar, true);
-        }
-
-        RovingProgress progress =
-            (RovingProgress) getComponent(IdvUIManager.COMP_PROGRESSBAR);
-        if (progress != null) {
-            progress.doRemove();
-        }
-
-        JComponent messageLogger =
-            (JComponent) getComponent(IdvUIManager.COMP_MESSAGELABEL);
-        if (messageLogger != null) {
-            LogUtil.removeMessageLogger(messageLogger);
-        }
-
-
-        allWindows.remove(this);
-        mainWindows.remove(this);
-
-        List groups = getComponentGroups();
-        for (int i = 0; i < groups.size(); i++) {
-            ComponentGroup group = (ComponentGroup) groups.get(i);
-            group.doRemove();
-        }
-        this.groups = null;
-        destroyViewManagers();
-        viewManagers         = null;
-
-        components           = null;
-        persistentComponents = null;
-        contents             = null;
-
-        if (xmlUI != null) {
-            //This was commented out. Not sure why.
-            xmlUI.dispose();
-            xmlUI = null;
-        }
-        super.dispose();
+        McVGuiUtils.runOnEDT(() -> {
+            if (hasBeenDisposed) {
+                return;
+            }
+            hasBeenDisposed = true;
+    
+            if (lastActiveWindow == this) {
+                lastActiveWindow = null;
+            }
+    
+            idv.getIdvUIManager().removeWindow(this);
+    
+            for (Removable removable : removables) {
+                removable.doRemove();
+            }
+            removables = null;
+    
+            JMenuBar menuBar = (JMenuBar) getComponent(IdvUIManager.COMP_MENUBAR);
+            if (menuBar != null) {
+                GuiUtils.empty(menuBar, true);
+            }
+    
+            RovingProgress progress =
+                (RovingProgress) getComponent(IdvUIManager.COMP_PROGRESSBAR);
+            if (progress != null) {
+                progress.doRemove();
+            }
+    
+            JComponent messageLogger =
+                (JComponent) getComponent(IdvUIManager.COMP_MESSAGELABEL);
+            if (messageLogger != null) {
+                LogUtil.removeMessageLogger(messageLogger);
+            }
+    
+    
+            allWindows.remove(this);
+            mainWindows.remove(this);
+    
+            List groups = getComponentGroups();
+            for (int i = 0; i < groups.size(); i++) {
+                ComponentGroup group = (ComponentGroup) groups.get(i);
+                group.doRemove();
+            }
+            this.groups = null;
+            destroyViewManagers();
+            viewManagers         = null;
+    
+            components           = null;
+            persistentComponents = null;
+            contents             = null;
+    
+            if (xmlUI != null) {
+                //This was commented out. Not sure why.
+                xmlUI.dispose();
+                xmlUI = null;
+            }
+            super.dispose();
+        });
     }
 
     /**
@@ -688,8 +711,8 @@ public class IdvWindow extends MultiFrame {
      *
      * @return List of main windows
      */
-    public static List getMainWindows() {
-        return mainWindows;
+    public static List<IdvWindow> getMainWindows() {
+        return new ArrayList<>(mainWindows);
     }
 
 
@@ -749,7 +772,7 @@ public class IdvWindow extends MultiFrame {
      * @return _more_
      */
     public List<IdvComponentGroup> getComponentGroups() {
-        List groups = new ArrayList<IdvComponentGroup>();
+        List<IdvComponentGroup> groups = new ArrayList<>();
         if (persistentComponents == null) {
             return groups;
         }
@@ -833,8 +856,8 @@ public class IdvWindow extends MultiFrame {
      *
      * @return List of IdvWindow objects
      */
-    public static List getWindows() {
-        return new ArrayList(allWindows);
+    public static List<IdvWindow> getWindows() {
+        return new ArrayList<>(allWindows);
     }
 
 
@@ -857,8 +880,9 @@ public class IdvWindow extends MultiFrame {
      *
      *  @param value The new value for ViewManagers
      */
-    public void setTheViewManagers(List value) {
-        viewManagers = value;
+    public void setTheViewManagers(List<ViewManager> value) {
+        viewManagers.clear();
+        viewManagers.addAll(value);
     }
 
     /**
@@ -868,7 +892,7 @@ public class IdvWindow extends MultiFrame {
      */
     public void addViewManager(ViewManager viewManager) {
         if (viewManagers == null) {
-            viewManagers = new ArrayList();
+            viewManagers = new ArrayList<>();
         }
         if ( !viewManagers.contains(viewManager)) {
             viewManagers.add(viewManager);
@@ -880,8 +904,8 @@ public class IdvWindow extends MultiFrame {
      *
      *  @return The ViewManagers
      */
-    public List getViewManagers() {
-        List tmp = new ArrayList();
+    public List<ViewManager> getViewManagers() {
+        List<ViewManager> tmp = new ArrayList<>();
         if (viewManagers != null) {
             tmp.addAll(viewManagers);
         }
@@ -975,12 +999,12 @@ public class IdvWindow extends MultiFrame {
      *
      * @param value The new value for PersistenceComponents
      */
-    public void setPersistentComponents(Hashtable value) {
+    public void setPersistentComponents(Hashtable<Object, Object> value) {
         if (value == null) {
             persistentComponents = value;
             return;
         }
-        persistentComponents = new Hashtable();
+        persistentComponents = new Hashtable<>();
         persistentComponents.putAll(value);
     }
 
@@ -989,7 +1013,7 @@ public class IdvWindow extends MultiFrame {
      *
      * @return The PersistentComponents
      */
-    public Hashtable getPersistentComponents() {
+    public Hashtable<Object, Object> getPersistentComponents() {
         return persistentComponents;
     }
 

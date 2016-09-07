@@ -136,12 +136,14 @@ public class MultiFrame {
      * Show the component
      */
     public void show() {
-        JFrame theFrame = frame;
-        if (theFrame != null) {
-            theFrame.setVisible(true);
-        } else if (internalFrame != null) {
-            internalFrame.show();
-        }
+        McVGuiUtils.runOnEDT(() -> {
+            JFrame theFrame = frame;
+            if (theFrame != null) {
+                theFrame.setVisible(true);
+            } else if (internalFrame != null) {
+                internalFrame.show();
+            }
+        });
     }
 
 
@@ -149,26 +151,28 @@ public class MultiFrame {
      * dispose of the component
      */
     public void dispose() {
-        if ((frame == null) && (internalFrame == null)) {
-            return;
-        }
-        JFrame theFrame = frame;
-        if (theFrame != null) {
-            if (frameListeners != null) {
-                for (WindowListener listener : frameListeners) {
-                    theFrame.removeWindowListener(listener);
-                }
+        McVGuiUtils.runOnEDT(() -> {
+            if ((frame == null) && (internalFrame == null)) {
+                return;
             }
-            theFrame.dispose();
-        } else if (internalFrame != null) {
-            internalFrame.dispose();
-        }
-
-        desktopPane    = null;
-        frame          = null;
-        internalFrame  = null;
-        listeners      = null;
-        frameListeners = null;
+            JFrame theFrame = frame;
+            if (theFrame != null) {
+                if (frameListeners != null) {
+                    for (WindowListener listener : frameListeners) {
+                        theFrame.removeWindowListener(listener);
+                    }
+                }
+                theFrame.dispose();
+            } else if (internalFrame != null) {
+                internalFrame.dispose();
+            }
+    
+            desktopPane    = null;
+            frame          = null;
+            internalFrame  = null;
+            listeners      = null;
+            frameListeners = null;
+        });
     }
 
 
@@ -178,12 +182,15 @@ public class MultiFrame {
      * @param visible visible
      */
     public void setVisible(boolean visible) {
-        JFrame theFrame = frame;
-        if (theFrame != null) {
-            theFrame.setVisible(visible);
-        } else if (internalFrame != null) {
-            internalFrame.setVisible(visible);
-        }
+        McVGuiUtils.runOnEDT(() -> {
+            JFrame theFrame = frame;
+            if (theFrame != null) {
+                theFrame.setVisible(visible);
+            } else if (internalFrame != null) {
+                internalFrame.setVisible(visible);
+            }
+        });
+
     }
 
     /**
@@ -222,10 +229,16 @@ public class MultiFrame {
      * @param cursor cursor
      */
     public void setCursor(Cursor cursor) {
-        Window window = getWindow();
-        if(window!=null) {
-            window.setCursor(cursor);
-        }
+        SwingUtilities.invokeLater(() -> {
+            Window window = getWindow();
+            if (window != null) {
+                window.setCursor(cursor);
+            }
+        });
+//        Window window = getWindow();
+//        if(window!=null) {
+//            window.setCursor(cursor);
+//        }
     }
 
 
@@ -322,12 +335,14 @@ public class MultiFrame {
      * wrapper method
      */
     public void pack() {
-        JFrame theFrame = frame;
-        if (theFrame != null) {
-            theFrame.pack();
-        } else if (internalFrame != null) {
-            internalFrame.pack();
-        }
+//        McVGuiUtils.runOnEDT(() -> {
+            JFrame theFrame = frame;
+            if (theFrame != null) {
+                theFrame.pack();
+            } else if (internalFrame != null) {
+                internalFrame.pack();
+            }
+//        });
     }
 
     /**
@@ -590,7 +605,7 @@ public class MultiFrame {
      * @param size size_
      */
     public void setSize(Dimension size) {
-        getComponent().setSize(size);
+        SwingUtilities.invokeLater(() -> getComponent().setSize(size));
     }
 
 
@@ -600,7 +615,8 @@ public class MultiFrame {
      * @return size
      */
     public Dimension getSize() {
-        return getComponent().getSize();
+        return McVGuiUtils.getFromEDT(() -> getComponent().getSize());
+//        return getComponent().getSize();
     }
 
     /**
