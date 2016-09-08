@@ -900,78 +900,85 @@ public class LogUtil {
         if (log_ != null) {
             log_.error(msg);
         }
-
+        
 
         if (showGui()) {
+            doDialog(msg, exc);
+        }
 
+        //        userErrorMessage(log_, msg);
+        exc.printStackTrace(System.err);
+        if (!showGui()) {
+            exceptions.add(exc);
+            msgs.add(xmsg);
+        }
+    }
+
+    private static void doDialog(String msg, Throwable exc) {
+        SwingUtilities.invokeLater(() -> {
             JDialog tmpDialog;
             final JDialog dialog = GuiUtils.createDialog(getCurrentWindow(),
                                        "Error", true);
-
+    
             final JPanel bottomPanel    = new JPanel(new BorderLayout());
             JButton      showConsoleBtn = new JButton("Show Console");
             List         buttonList     = new ArrayList();
-
+    
             if (dialogManager != null) {
                 dialogManager.addErrorButtons(dialog, buttonList, msg, exc);
             }
-
+    
             final JButton detailsBtn  = new JButton("Show Details");
             JTextArea     detailsArea = new JTextArea(getStackTrace(exc));
-
+    
             detailsArea.setBackground(new JPanel().getBackground());
             detailsArea.setEditable(false);
             JScrollPane sp = new JScrollPane(detailsArea);
             sp.setPreferredSize(new Dimension(500, 200));
-
+    
             JButton         closeBtn     = new JButton("OK");
             final boolean[] showing      = { false };
             final JPanel    detailsPanel = LayoutUtil.center(sp);
-
-
-            closeBtn.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ae) {
-                    lastErrorTime = System.currentTimeMillis();
-                    dialog.dispose();
-                }
+    
+            closeBtn.addActionListener(ae -> {
+                lastErrorTime = System.currentTimeMillis();
+                dialog.dispose();
             });
-            detailsBtn.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ae) {
-                    if (showing[0]) {
-                        bottomPanel.removeAll();
-                        detailsBtn.setText("Show Details");
-                    } else {
-                        bottomPanel.add(detailsPanel);
-                        detailsBtn.setText("Hide Details");
-                    }
-                    showing[0] = !showing[0];
-                    bottomPanel.invalidate();
-                    dialog.pack();
+            detailsBtn.addActionListener(ae -> {
+                if (showing[0]) {
+                    bottomPanel.removeAll();
+                    detailsBtn.setText("Show Details");
+                } else {
+                    bottomPanel.add(detailsPanel);
+                    detailsBtn.setText("Hide Details");
                 }
+                showing[0] = !showing[0];
+                bottomPanel.invalidate();
+                dialog.pack();
             });
             JComponent errorLbl = new JLabel(
                                       GuiUtils.getImageIcon(
                                           "/auxdata/ui/icons/Error.gif"));
             errorLbl = LayoutUtil.top(LayoutUtil.inset(errorLbl,
                     new Insets(8, 8, 8, 8)));
-
+    
             buttonList.add(detailsBtn);
             buttonList.add(closeBtn);
             LayoutUtil.tmpInsets = new Insets(0, 4, 0, 4);
             JComponent buttons = LayoutUtil.doLayout(buttonList,
                                      buttonList.size(), LayoutUtil.WT_N,
                                      LayoutUtil.WT_N);
-
+    
             buttons = LayoutUtil.inset(buttons, 5);
             JComponent messageComp =
                 LayoutUtil.inset(getMessageComponent(msg),
                                  new Insets(8, 0, 8, 8));
 
-
+    
             JComponent topPanel = LayoutUtil.leftCenter(errorLbl,
                                       messageComp);
             topPanel.setBackground(Color.red);
-
+    
 
             JComponent contents = LayoutUtil.centerBottom(topPanel, buttons);
             contents = LayoutUtil.doLayout(new Component[] { contents,
@@ -986,16 +993,7 @@ public class LogUtil {
                                             screenSize.height / 2
                                             - dialogSize.height / 2));
             dialog.setVisible(true);
-            //            javax.swing.JOptionPane.showMessageDialog(
-            //                null, contents, "Error", JOptionPane.ERROR_MESSAGE);
-        }
-
-        //        userErrorMessage(log_, msg);
-        exc.printStackTrace(System.err);
-        if (!showGui()) {
-            exceptions.add(exc);
-            msgs.add(xmsg);
-        }
+        });
     }
 
 
