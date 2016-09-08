@@ -1844,15 +1844,21 @@ public class UIManager extends IdvUIManager implements ActionListener {
             comp.add(mi);
         }
     }
-
+    
+    /**
+     * {@inheritDoc}
+     */
     @Override public void init() {
-        McVGuiUtils.runOnEDT(super::init);
+        SwingUtilities.invokeLater(super::init);
     }
     
+    /**
+     * {@inheritDoc}
+     */
     @Override public void initDone() {
         logger.trace("INIT DONE THREAD!?");
         super.initDone();
-//        McVGuiUtils.runOnEDT(() -> IdvWindow.getMainWindows().forEach(MultiFrame::pack));
+        McVGuiUtils.runOnEDT(() -> IdvWindow.getMainWindows().forEach(MultiFrame::pack));
 
         if (getStore().get(Constants.PREF_VERSION_CHECK, true)) {
             StateManager stateManager = (StateManager)getStateManager();
