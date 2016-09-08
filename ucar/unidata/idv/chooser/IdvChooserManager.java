@@ -30,6 +30,7 @@ package ucar.unidata.idv.chooser;
 
 
 
+import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -92,6 +93,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.Callable;
 
 import javax.swing.*;
 
@@ -864,45 +866,48 @@ public class IdvChooserManager extends IdvManager {
      * @return List of chooser menu items
      */
     public List makeChooserMenus(List items) {
-        List choosers = getChoosers();
-        //this is a little tricky. If there aren't any choosers
-        //then it might mean the user deleted the dashboard window
-        //If so, we recreate the basic windows if there aren't any.
-        
-        if ((choosers == null) || (choosers.size() == 0)) {
-            if ( !getIdv().getIdvUIManager().haveBasicWindow()) {
-                getIdv().getIdvUIManager().showBasicWindow(true);
-            }
-            choosers = getChoosers();
-        }
-        if ((choosers == null) || (choosers.size() == 0)) {
-            return new ArrayList();
-        }
-        Hashtable seen = new Hashtable();
-        //        System.err.println ("choosers:" + choosers.size());
-        for (int i = 0; i < choosers.size(); i++) {
-            final IdvChooser chooser = (IdvChooser) choosers.get(i);
-            if ( !chooser.getShowInMenu()) {
-                continue;
-            }
-            //Check for duplicates
-            if (seen.get(chooser.getId()) != null) {
-                continue;
-            }
-            seen.put(chooser.getId(), "");
-            if ( !getIdv().getPreferenceManager().shouldShowChooser(
-                    chooser.getId())) {
-                continue;
-            }
-            JMenuItem mi = new JMenuItem(chooser.getMenuTitle());
-            items.add(mi);
-            mi.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ae) {
-                    GuiUtils.showComponentInTabs(chooser.getContents());
+        Callable<List> makeMenus = () -> {
+            List choosers = getChoosers();
+            //this is a little tricky. If there aren't any choosers
+            //then it might mean the user deleted the dashboard window
+            //If so, we recreate the basic windows if there aren't any.
+    
+            if ((choosers == null) || (choosers.size() == 0)) {
+                if ( !getIdv().getIdvUIManager().haveBasicWindow()) {
+                    getIdv().getIdvUIManager().showBasicWindow(true);
                 }
-            });
-        }
-        return items;
+                choosers = getChoosers();
+            }
+            if ((choosers == null) || (choosers.size() == 0)) {
+                return new ArrayList();
+            }
+            Hashtable seen = new Hashtable();
+            //        System.err.println ("choosers:" + choosers.size());
+            for (int i = 0; i < choosers.size(); i++) {
+                final IdvChooser chooser = (IdvChooser) choosers.get(i);
+                if ( !chooser.getShowInMenu()) {
+                    continue;
+                }
+                //Check for duplicates
+                if (seen.get(chooser.getId()) != null) {
+                    continue;
+                }
+                seen.put(chooser.getId(), "");
+                if ( !getIdv().getPreferenceManager().shouldShowChooser(
+                    chooser.getId())) {
+                    continue;
+                }
+                JMenuItem mi = new JMenuItem(chooser.getMenuTitle());
+                items.add(mi);
+                mi.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent ae) {
+                        GuiUtils.showComponentInTabs(chooser.getContents());
+                    }
+                });
+            }
+            return items;
+        };
+        return McVGuiUtils.getFromEDT(makeMenus);
     }
 
 
