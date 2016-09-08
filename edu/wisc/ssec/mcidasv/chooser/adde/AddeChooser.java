@@ -1267,28 +1267,29 @@ public class AddeChooser extends ucar.unidata.idv.chooser.adde.AddeChooser imple
      * Try to update the status label with what we know here.
      */
     protected void updateStatus() {
-        super.updateStatus();
-        if (getState() == STATE_CONNECTED) {
-            lastServer = new AddeServer("");
-            lastServerGroup = "";
-            lastServerName = "";
-            lastServerProj = "";
-            lastServerUser = "";
+        SwingUtilities.invokeLater(() -> {
+            super.updateStatus();
+            if (getState() == STATE_CONNECTED) {
+                lastServer = new AddeServer("");
+                lastServerGroup = "";
+                lastServerName = "";
+                lastServerProj = "";
+                lastServerUser = "";
 
-            if (!haveDescriptorSelected()) {
-                if (!usingStations() || haveStationSelected()) {
-                    //                String name = getDataName().toLowerCase();
-                    String name = getDescriptorLabel().toLowerCase();
-                    if (StringUtil.startsWithVowel(name)) {
-                        setStatus("Please select an " + name);
-                    } else {
-                        setStatus("Please select a " + name);
+                if (!haveDescriptorSelected()) {
+                    if (!usingStations() || haveStationSelected()) {
+                        //                String name = getDataName().toLowerCase();
+                        String name = getDescriptorLabel().toLowerCase();
+                        if (StringUtil.startsWithVowel(name)) {
+                            setStatus("Please select an " + name);
+                        } else {
+                            setStatus("Please select a " + name);
+                        }
                     }
                 }
             }
-        }
-
-        GuiUtils.enableTree(connectButton, getState() != STATE_CONNECTING);
+            GuiUtils.enableTree(connectButton, getState() != STATE_CONNECTING);
+        });
     }
     
     /**
@@ -1469,8 +1470,10 @@ public class AddeChooser extends ucar.unidata.idv.chooser.adde.AddeChooser imple
             }
             logger.debug("readDesc: names={}", names);
             Arrays.sort(names);
-            setDescriptors(names);
-            setState(STATE_CONNECTED);
+            SwingUtilities.invokeLater(() -> {
+                setDescriptors(names);
+                setState(STATE_CONNECTED);
+            });
         } catch (Exception e) {
             handleConnectionError(e);
         }
@@ -1482,20 +1485,22 @@ public class AddeChooser extends ucar.unidata.idv.chooser.adde.AddeChooser imple
      * @param names  list of names
      */
     protected void setDescriptors(String[] names) {
-        synchronized (WIDGET_MUTEX) {
-            ignoreDescriptorChange = true;
-            descriptorComboBox.removeAllItems();
-            descriptorNames = names;
-            if ((names == null) || (names.length == 0)) {
-                return;
+        SwingUtilities.invokeLater(() -> {
+            synchronized (WIDGET_MUTEX) {
+                ignoreDescriptorChange = true;
+                descriptorComboBox.removeAllItems();
+                descriptorNames = names;
+                if ((names == null) || (names.length == 0)) {
+                    return;
+                }
+                descriptorComboBox.addItem(LABEL_SELECT);
+                for (int j = 0; j < names.length; j++) {
+                    logger.trace("adding names[{}]='{}' to combo box", j, names[j]);
+                    descriptorComboBox.addItem(names[j]);
+                }
+                ignoreDescriptorChange = false;
             }
-            descriptorComboBox.addItem(LABEL_SELECT);
-            for (int j = 0; j < names.length; j++) {
-                logger.trace("adding names[{}]='{}' to combo box", j, names[j]);
-                descriptorComboBox.addItem(names[j]);
-            }
-            ignoreDescriptorChange = false;
-        }
+        });
     }
 
     /**
@@ -1503,7 +1508,8 @@ public class AddeChooser extends ucar.unidata.idv.chooser.adde.AddeChooser imple
      */
     protected void descriptorChanged() {
         readTimes();
-        updateStatus();
+        SwingUtilities.invokeLater(() -> updateStatus());
+        
     }
 
     /**

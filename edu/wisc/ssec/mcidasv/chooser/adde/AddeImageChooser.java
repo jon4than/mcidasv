@@ -71,6 +71,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -1143,43 +1144,44 @@ public class AddeImageChooser extends AddeChooser implements
      * Enable or disable the GUI widgets based on what has been selected.
      */
     @Override protected void enableWidgets() {
-        boolean descriptorState = ((getState() == STATE_CONNECTED) && canReadTimes());
+        SwingUtilities.invokeLater(() -> {
+        
+            boolean descriptorState = ((getState() == STATE_CONNECTED) && canReadTimes());
 
-        for (int i = 0; i < compsThatNeedDescriptor.size(); i++) {
-            JComponent comp = (JComponent) compsThatNeedDescriptor.get(i);
-            GuiUtils.enableTree(comp, descriptorState);
-        }
+            for (int i = 0; i < compsThatNeedDescriptor.size(); i++) {
+                JComponent comp = (JComponent) compsThatNeedDescriptor.get(i);
+                GuiUtils.enableTree(comp, descriptorState);
+            }
 
-        boolean timesOk = timesOk();
-        if (propPanel != null) {
-            GuiUtils.enableTree(propPanel, timesOk);
-        }
+            boolean timesOk = timesOk();
+            if (propPanel != null) {
+                GuiUtils.enableTree(propPanel, timesOk);
+            }
 
-        // Require times to be selected
-        GuiUtils.enableTree(loadButton, descriptorState && timesOk);
+            // Require times to be selected
+            GuiUtils.enableTree(loadButton, descriptorState && timesOk);
 
-        if (timesOk) {
-            checkCenterEnabled();
-        }
-        checkTimesLists();
+            if (timesOk) {
+                checkCenterEnabled();
+            }
+            checkTimesLists();
 
-        // TODO: This is temporary... absolute times on Windows makes the local
-        // servers choke
-        // Update: this works now, but leave it here as a reminder
-        // boolean localWindowsServer = isLocalServer() &&
-        // System.getProperty("os.name").startsWith("Windows");
-        // setDoAbsoluteTimes(getDoAbsoluteTimes() && !localWindowsServer);
+            // TODO: This is temporary... absolute times on Windows makes the local
+            // servers choke
+            // Update: this works now, but leave it here as a reminder
+            // boolean localWindowsServer = isLocalServer() &&
+            // System.getProperty("os.name").startsWith("Windows");
+            // setDoAbsoluteTimes(getDoAbsoluteTimes() && !localWindowsServer);
 
-        enableAbsoluteTimesList(getDoAbsoluteTimes() && descriptorState);
+            enableAbsoluteTimesList(getDoAbsoluteTimes() && descriptorState);
 
-        getRelativeTimesChooser().setEnabled(
-                !getDoAbsoluteTimes() && descriptorState);
+            getRelativeTimesChooser().setEnabled(!getDoAbsoluteTimes() && descriptorState);
 
-        if (drivercbx != null) {
-//            logger.trace("set drivercbx={}", anyTimeDrivers() && descriptorState);
-            drivercbx.setEnabled(anyTimeDrivers() && descriptorState);
-        }
-        revalidate();
+            if (drivercbx != null) {
+                drivercbx.setEnabled(anyTimeDrivers() && descriptorState);
+            }
+            revalidate();
+        });
     }
 
     /**
