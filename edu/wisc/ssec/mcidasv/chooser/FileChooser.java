@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -561,8 +562,9 @@ public class FileChooser extends ucar.unidata.idv.chooser.FileChooser
 
     @Override
     public void setStatus(String statusString, String foo) {
-        if (statusString == null)
+        if (statusString == null) {
             statusString = "";
+        }
         statusLabel.setText(statusString);
     }
         
@@ -572,122 +574,118 @@ public class FileChooser extends ucar.unidata.idv.chooser.FileChooser
     protected JComponent doMakeContents() {
         // Run super.doMakeContents()
         // It does some initialization on private components that we can't get at
-        JComponent parentContents = super.doMakeContents();
-        Element chooserNode = getXmlNode();
-
-        String pathFromXml =
-            XmlUtil.getAttribute(chooserNode, ATTR_PATH, (String)null);
-        if (pathFromXml != null && Paths.get(pathFromXml).toFile().exists()) {
-            setPath(pathFromXml);
-        }
-
-        JComponent typeComponent = new JPanel();
-        if (XmlUtil.getAttribute(chooserNode, ATTR_DSCOMP, true)) {
-            typeComponent = getDataSourcesComponent();
-        }
-        if (defaultDataSourceName != null) {
-            typeComponent = new JLabel(defaultDataSourceName);
-            McVGuiUtils.setLabelBold((JLabel)typeComponent, true);
-            McVGuiUtils.setComponentHeight(typeComponent, new JComboBox());
-        }
-                        
-        // Create the different panels... extending classes can override these
-        topPanel = getTopPanel();
-        centerPanel = getCenterPanel();
-        bottomPanel = getBottomPanel();
-        
-        JPanel innerPanel = centerPanel;
-        if (topPanel!=null && bottomPanel!=null)
-            innerPanel = McVGuiUtils.topCenterBottom(topPanel, centerPanel, bottomPanel);
-        else if (topPanel!=null) 
-            innerPanel = McVGuiUtils.topBottom(topPanel, centerPanel, McVGuiUtils.Prefer.BOTTOM);
-        else if (bottomPanel!=null)
-            innerPanel = McVGuiUtils.topBottom(centerPanel, bottomPanel, McVGuiUtils.Prefer.TOP);
-        
-        // Start building the whole thing here
-        JPanel outerPanel = new JPanel();
-
-        JLabel typeLabel = McVGuiUtils.makeLabelRight(getDataSourcesLabel());
-                
-        JLabel statusLabelLabel = McVGuiUtils.makeLabelRight("");
-                
-        McVGuiUtils.setLabelPosition(statusLabel, Position.RIGHT);
-        McVGuiUtils.setComponentColor(statusLabel, TextColor.STATUS);
-        
-        JButton helpButton = McVGuiUtils.makeImageButton(ICON_HELP, "Show help");
-        helpButton.setActionCommand(GuiUtils.CMD_HELP);
-        helpButton.addActionListener(this);
-        
-        JButton refreshButton = McVGuiUtils.makeImageButton(ICON_REFRESH, "Refresh");
-        refreshButton.setActionCommand(GuiUtils.CMD_UPDATE);
-        refreshButton.addActionListener(this);
-        
-        McVGuiUtils.setButtonImage(loadButton, ICON_ACCEPT_SMALL);
-        McVGuiUtils.setComponentWidth(loadButton, Width.DOUBLE);
-        
-        // This is how we know if the action was initiated by a button press
-        loadButton.addActionListener(new ActionListener() {
-                   public void actionPerformed(ActionEvent e) {
-                       buttonPressed = true;
-                       Misc.runInABit(1000, new Runnable() {
-                           public void run() {
-                               buttonPressed = false;
-                           }
-                       });
-                   }
-              }
-        );
-
-        GroupLayout layout = new GroupLayout(outerPanel);
-        outerPanel.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(LEADING)
-            .addGroup(TRAILING, layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(TRAILING)
+        Callable<JComponent> makeContents = () -> {
+            JComponent parentContents = super.doMakeContents();
+            Element chooserNode = getXmlNode();
+    
+            String pathFromXml =
+                XmlUtil.getAttribute(chooserNode, ATTR_PATH, (String)null);
+            if (pathFromXml != null && Paths.get(pathFromXml).toFile().exists()) {
+                setPath(pathFromXml);
+            }
+    
+            JComponent typeComponent = new JPanel();
+            if (XmlUtil.getAttribute(chooserNode, ATTR_DSCOMP, true)) {
+                typeComponent = getDataSourcesComponent();
+            }
+            if (defaultDataSourceName != null) {
+                typeComponent = new JLabel(defaultDataSourceName);
+                McVGuiUtils.setLabelBold((JLabel)typeComponent, true);
+                McVGuiUtils.setComponentHeight(typeComponent, new JComboBox());
+            }
+    
+            // Create the different panels... extending classes can override these
+            topPanel = getTopPanel();
+            centerPanel = getCenterPanel();
+            bottomPanel = getBottomPanel();
+    
+            JPanel innerPanel = centerPanel;
+            if (topPanel!=null && bottomPanel!=null)
+                innerPanel = McVGuiUtils.topCenterBottom(topPanel, centerPanel, bottomPanel);
+            else if (topPanel!=null)
+                innerPanel = McVGuiUtils.topBottom(topPanel, centerPanel, McVGuiUtils.Prefer.BOTTOM);
+            else if (bottomPanel!=null)
+                innerPanel = McVGuiUtils.topBottom(centerPanel, bottomPanel, McVGuiUtils.Prefer.TOP);
+    
+            // Start building the whole thing here
+            JPanel outerPanel = new JPanel();
+    
+            JLabel typeLabel = McVGuiUtils.makeLabelRight(getDataSourcesLabel());
+    
+            JLabel statusLabelLabel = McVGuiUtils.makeLabelRight("");
+    
+            McVGuiUtils.setLabelPosition(statusLabel, Position.RIGHT);
+            McVGuiUtils.setComponentColor(statusLabel, TextColor.STATUS);
+    
+            JButton helpButton = McVGuiUtils.makeImageButton(ICON_HELP, "Show help");
+            helpButton.setActionCommand(GuiUtils.CMD_HELP);
+            helpButton.addActionListener(this);
+    
+            JButton refreshButton = McVGuiUtils.makeImageButton(ICON_REFRESH, "Refresh");
+            refreshButton.setActionCommand(GuiUtils.CMD_UPDATE);
+            refreshButton.addActionListener(this);
+    
+            McVGuiUtils.setButtonImage(loadButton, ICON_ACCEPT_SMALL);
+            McVGuiUtils.setComponentWidth(loadButton, Width.DOUBLE);
+    
+            // This is how we know if the action was initiated by a button press
+            loadButton.addActionListener(e -> {
+                buttonPressed = true;
+                Misc.runInABit(1000, () -> buttonPressed = false);
+            }
+            );
+    
+            GroupLayout layout = new GroupLayout(outerPanel);
+            outerPanel.setLayout(layout);
+            layout.setHorizontalGroup(
+                layout.createParallelGroup(LEADING)
+                    .addGroup(TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(TRAILING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(helpButton)
+                                .addGap(GAP_RELATED)
+                                .addComponent(refreshButton)
+                                .addPreferredGap(RELATED)
+                                .addComponent(loadButton))
+                            .addGroup(LEADING, layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(layout.createParallelGroup(LEADING)
+                                    .addComponent(innerPanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(typeLabel)
+                                        .addGap(GAP_RELATED)
+                                        .addComponent(typeComponent))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(statusLabelLabel)
+                                        .addGap(GAP_RELATED)
+                                        .addComponent(statusLabel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)))))
+                        .addContainerGap())
+            );
+            layout.setVerticalGroup(
+                layout.createParallelGroup(LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(helpButton)
-                        .addGap(GAP_RELATED)
-                        .addComponent(refreshButton)
-                        .addPreferredGap(RELATED)
-                        .addComponent(loadButton))
-                        .addGroup(LEADING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(LEADING)
-                            .addComponent(innerPanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(typeLabel)
-                                .addGap(GAP_RELATED)
-                                .addComponent(typeComponent))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(statusLabelLabel)
-                                .addGap(GAP_RELATED)
-                                .addComponent(statusLabel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)))))
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(BASELINE)
-                    .addComponent(typeLabel)
-                    .addComponent(typeComponent))
-                .addPreferredGap(UNRELATED)
-                .addComponent(innerPanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(UNRELATED)
-                .addGroup(layout.createParallelGroup(BASELINE)
-                    .addComponent(statusLabelLabel)
-                    .addComponent(statusLabel))
-                .addPreferredGap(UNRELATED)
-                .addGroup(layout.createParallelGroup(BASELINE)
-                    .addComponent(loadButton)
-                    .addComponent(refreshButton)
-                    .addComponent(helpButton))
-                .addContainerGap())
-        );
-    
-        return outerPanel;
-
+                        .addGroup(layout.createParallelGroup(BASELINE)
+                            .addComponent(typeLabel)
+                            .addComponent(typeComponent))
+                        .addPreferredGap(UNRELATED)
+                        .addComponent(innerPanel, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(UNRELATED)
+                        .addGroup(layout.createParallelGroup(BASELINE)
+                            .addComponent(statusLabelLabel)
+                            .addComponent(statusLabel))
+                        .addPreferredGap(UNRELATED)
+                        .addGroup(layout.createParallelGroup(BASELINE)
+                            .addComponent(loadButton)
+                            .addComponent(refreshButton)
+                            .addComponent(helpButton))
+                        .addContainerGap())
+            );
+            
+            return outerPanel;
+        };
+        return McVGuiUtils.getFromEDT(makeContents);
     }
     
 }
