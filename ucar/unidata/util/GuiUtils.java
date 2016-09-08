@@ -30,6 +30,7 @@ package ucar.unidata.util;
 
 
 import edu.wisc.ssec.mcidasv.ui.ColorSwatchComponent;
+import edu.wisc.ssec.mcidasv.util.McVGuiUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -93,6 +94,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import javax.swing.AbstractButton;
@@ -497,10 +499,12 @@ public class GuiUtils extends LayoutUtil {
      * @param cursor The cursor
      */
     public static void setCursor(Component component, Cursor cursor) {
-        Window f = getWindow(component);
-        if (f != null) {
-            f.setCursor(cursor);
-        }
+        McVGuiUtils.runOnEDT(() -> {
+            Window f = getWindow(component);
+            if (f != null) {
+                f.setCursor(cursor);
+            }
+        });
     }
 
     /**
@@ -511,17 +515,20 @@ public class GuiUtils extends LayoutUtil {
      * @return The JFrame
      */
     public static JFrame getFrame(Component component) {
-        if (component == null) {
-            return null;
-        }
-        Component parent = component.getParent();
-        while (parent != null) {
-            if (JFrame.class.isAssignableFrom(parent.getClass())) {
-                return (JFrame) parent;
+        Callable<JFrame> findFrame = () -> {
+            if (component == null) {
+                return null;
             }
-            parent = parent.getParent();
-        }
-        return null;
+            Component parent = component.getParent();
+            while (parent != null) {
+                if (JFrame.class.isAssignableFrom(parent.getClass())) {
+                    return (JFrame) parent;
+                }
+                parent = parent.getParent();
+            }
+            return null;
+        };
+        return McVGuiUtils.getFromEDT(findFrame);
     }
 
 
@@ -581,13 +588,15 @@ public class GuiUtils extends LayoutUtil {
         if (window == null) {
             return;
         }
-        window.setVisible(true);
-        window.toFront();
-        if (window instanceof Frame) {
-            Frame f = (Frame) window;
-            //            f.setExtendedState(Frame.ICONIFIED);
-            //            f.setExtendedState(Frame.NORMAL);
-        }
+        McVGuiUtils.runOnEDT(() -> {
+            window.setVisible(true);
+            window.toFront();
+            if (window instanceof Frame) {
+                Frame f = (Frame) window;
+                //            f.setExtendedState(Frame.ICONIFIED);
+                //            f.setExtendedState(Frame.NORMAL);
+            }
+        });
 
 
     }
@@ -601,17 +610,20 @@ public class GuiUtils extends LayoutUtil {
      * @return The window the component is on or null if not found
      */
     public static Window getWindow(Component component) {
-        if (component == null) {
-            return null;
-        }
-        Component parent = component.getParent();
-        while (parent != null) {
-            if (parent instanceof Window) {
-                return (Window) parent;
+        Callable<Window> findWindow = () -> {
+            if (component == null) {
+                return null;
             }
-            parent = parent.getParent();
-        }
-        return null;
+            Component parent = component.getParent();
+            while (parent != null) {
+                if (parent instanceof Window) {
+                    return (Window) parent;
+                }
+                parent = parent.getParent();
+            }
+            return null;
+        };
+        return McVGuiUtils.getFromEDT(findWindow);
     }
 
 
@@ -1365,9 +1377,12 @@ public class GuiUtils extends LayoutUtil {
      * @return The newly created button
      */
     public static JButton makeJButton(String label, ActionListener listener) {
-        JButton b = new JButton(label);
-        b.addActionListener(listener);
-        return b;
+        Callable<JButton> makeButton = () -> {
+            JButton b = new JButton(label);
+            b.addActionListener(listener);
+            return b;
+        };
+        return McVGuiUtils.getFromEDT(makeButton);
     }
 
 
@@ -1384,29 +1399,32 @@ public class GuiUtils extends LayoutUtil {
      * @return The newly created button
      */
     public static JButton makeJButton(String label, Object[] args) {
-        JButton b = new JButton(label);
-        if ((args.length / 2 * 2) != args.length) {
-            throw new IllegalArgumentException(
-                "makeJButton: must have an even number of arguments");
-        }
-        for (int i = 0; i < args.length; i += 2) {
-            String attr = (String) args[i];
-            if (attr.equals("-tooltip")) {
-                b.setToolTipText((String) args[i + 1]);
-            } else if (attr.equals("-bg")) {
-                b.setBackground((Color) args[i + 1]);
-            } else if (attr.equals("-font")) {
-                b.setFont((Font) args[i + 1]);
-            } else if (attr.equals("-listener")) {
-                b.addActionListener((ActionListener) args[i + 1]);
-            } else if (attr.equals("-command")) {
-                b.setActionCommand((String) args[i + 1]);
-            } else {
+        Callable<JButton> makeButton = () -> {
+            JButton b = new JButton(label);
+            if ((args.length / 2 * 2) != args.length) {
                 throw new IllegalArgumentException(
-                    "makeJButton: unknown argument: " + attr);
+                    "makeJButton: must have an even number of arguments");
             }
-        }
-        return b;
+            for (int i = 0; i < args.length; i += 2) {
+                String attr = (String) args[i];
+                if (attr.equals("-tooltip")) {
+                    b.setToolTipText((String) args[i + 1]);
+                } else if (attr.equals("-bg")) {
+                    b.setBackground((Color) args[i + 1]);
+                } else if (attr.equals("-font")) {
+                    b.setFont((Font) args[i + 1]);
+                } else if (attr.equals("-listener")) {
+                    b.addActionListener((ActionListener) args[i + 1]);
+                } else if (attr.equals("-command")) {
+                    b.setActionCommand((String) args[i + 1]);
+                } else {
+                    throw new IllegalArgumentException(
+                        "makeJButton: unknown argument: " + attr);
+                }
+            }
+            return b;
+        };
+        return McVGuiUtils.getFromEDT(makeButton);
     }
 
 
@@ -1538,13 +1556,15 @@ public class GuiUtils extends LayoutUtil {
      * @param enable The enable flag
      */
     public static void enableTree(Component comp, boolean enable) {
-        comp.setEnabled(enable);
-        if (comp instanceof Container) {
-            Container container = (Container) comp;
-            for (int i = 0; i < container.getComponentCount(); i++) {
-                enableTree(container.getComponent(i), enable);
+        McVGuiUtils.runOnEDT(() -> {
+            comp.setEnabled(enable);
+            if (comp instanceof Container) {
+                Container container = (Container) comp;
+                for (int i = 0; i < container.getComponentCount(); i++) {
+                    enableTree(container.getComponent(i), enable);
+                }
             }
-        }
+        });
     }
 
 
@@ -1555,9 +1575,11 @@ public class GuiUtils extends LayoutUtil {
      * @param enable Enable or disable
      */
     public static void enableComponents(List comps, boolean enable) {
-        for (int i = 0; i < comps.size(); i++) {
-            enableTree((Component) comps.get(i), enable);
-        }
+        McVGuiUtils.runOnEDT(() -> {
+            for (int i = 0; i < comps.size(); i++) {
+                enableTree((Component) comps.get(i), enable);
+            }
+        });
     }
 
 
@@ -1570,7 +1592,7 @@ public class GuiUtils extends LayoutUtil {
     public static void enablePanel(JPanel panel, boolean enable) {
 
         java.util.List cList = new ArrayList();
-        Component[]    ac    = panel.getComponents();
+        Component[] ac = McVGuiUtils.getFromEDT(panel::getComponents);
         for (int i = 0; i < ac.length; i++) {
             Component a = ac[i];
             cList.add(a);
@@ -1590,13 +1612,17 @@ public class GuiUtils extends LayoutUtil {
      */
     public static JScrollPane makeScrollPane(Component c, int xdim,
                                              int ydim) {
-        JScrollPane sp =
-            new JScrollPane(
-                c, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        JViewport vp = sp.getViewport();
-        vp.setViewSize(new Dimension(xdim, ydim));
-        return sp;
+        Callable<JScrollPane> makeScrolPane = () -> {
+            JScrollPane sp =
+                new JScrollPane(
+                    c, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                    ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            JViewport vp = sp.getViewport();
+            vp.setViewSize(new Dimension(xdim, ydim));
+            return sp;
+        };
+        
+        return McVGuiUtils.getFromEDT(makeScrolPane);
     }
 
 
@@ -5138,15 +5164,12 @@ public class GuiUtils extends LayoutUtil {
             }
         }
 
-        box.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                try {
-                    theMethod.invoke(listener,
-                                     new Object[] { box.getSelectedItem() });
-                } catch (Exception exc) {
-                    System.err.println("Error invoking method" + exc);
-                    exc.printStackTrace();
-                }
+        box.addActionListener(ae -> {
+            try {
+                theMethod.invoke(listener, box.getSelectedItem());
+            } catch (Exception exc) {
+                System.err.println("Error invoking method" + exc);
+                exc.printStackTrace();
             }
         });
         return box;
@@ -5166,12 +5189,15 @@ public class GuiUtils extends LayoutUtil {
     public static JComboBox makeComboBox(int[] values, String[] labels,
                                          int current) {
         List      l        = TwoFacedObject.createList(values, labels);
-        JComboBox box      = new JComboBox(new Vector(l));
-        Object    selected = TwoFacedObject.findId(new Integer(current), l);
-        if (selected != null) {
-            box.setSelectedItem(selected);
-        }
-        return box;
+        Callable<JComboBox> makeBox = () -> {
+            JComboBox box      = new JComboBox(new Vector(l));
+            Object    selected = TwoFacedObject.findId(new Integer(current), l);
+            if (selected != null) {
+                box.setSelectedItem(selected);
+            }
+            return box;
+        };
+        return McVGuiUtils.getFromEDT(makeBox);
     }
 
     /**
@@ -5184,13 +5210,15 @@ public class GuiUtils extends LayoutUtil {
      */
     public static void setValueOfBox(JComboBox box, int value, int[] values,
                                      String[] labels) {
-        for (int i = 0; i < values.length; i++) {
-            if (value == values[i]) {
-                box.setSelectedItem(new TwoFacedObject(labels[i], value));
-                return;
+        McVGuiUtils.runOnEDT(() -> {
+            for (int i = 0; i < values.length; i++) {
+                if (value == values[i]) {
+                    box.setSelectedItem(new TwoFacedObject(labels[i], value));
+                    return;
+                }
             }
-        }
-        box.setSelectedItem(new TwoFacedObject("" + value, value));
+            box.setSelectedItem(new TwoFacedObject(Integer.toString(value), value));
+        });
     }
 
     /**
@@ -5201,8 +5229,11 @@ public class GuiUtils extends LayoutUtil {
      * @return  the integer value
      */
     public static int getValueFromBox(JComboBox box) {
-        TwoFacedObject tfo = (TwoFacedObject) box.getSelectedItem();
-        return ((Integer) tfo.getId()).intValue();
+        Callable<Integer> getVal = () -> {
+            TwoFacedObject tfo = (TwoFacedObject) box.getSelectedItem();
+            return ((Integer) tfo.getId()).intValue();
+        };
+        return McVGuiUtils.getFromEDT(getVal);
     }
 
 
@@ -5243,24 +5274,24 @@ public class GuiUtils extends LayoutUtil {
                                      final boolean updateAsMove) {
         final Method theMethod = findMethodWithClass(listener, methodName,
                                      Integer.TYPE);
-
-        JSlider slider = new JSlider(min, max, value);
-        slider.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JSlider slider = (JSlider) e.getSource();
-                if (updateAsMove || !slider.getValueIsAdjusting()) {
-                    int value = slider.getValue();
+        Callable<JSlider> makeSlider = () -> {
+            JSlider slider = new JSlider(min, max, value);
+            slider.addChangeListener(e -> {
+                JSlider source = (JSlider)e.getSource();
+                if (updateAsMove || !source.getValueIsAdjusting()) {
+                    int value1 = source.getValue();
                     try {
                         theMethod.invoke(listener,
-                                         new Object[] { new Integer(value) });
+                            new Object[] { new Integer(value1) });
                     } catch (Exception exc) {
                         System.err.println("Error invoking method" + exc);
                         exc.printStackTrace();
                     }
                 }
-            }
-        });
-        return slider;
+            });
+            return slider;
+        };
+        return McVGuiUtils.getFromEDT(makeSlider);
     }
 
 
@@ -5369,10 +5400,10 @@ public class GuiUtils extends LayoutUtil {
      * @param row The row
      */
     public static void makeRowVisible(JTable table, int row) {
-        Rectangle cellRect = table.getCellRect(row, 0, true);
-        if (cellRect != null) {
+        McVGuiUtils.runOnEDT(() -> {
+            Rectangle cellRect = table.getCellRect(row, 0, true);
             table.scrollRectToVisible(cellRect);
-        }
+        });
     }
 
     /**
@@ -5381,12 +5412,10 @@ public class GuiUtils extends LayoutUtil {
      * @param editor editor to scroll
      */
     public static void scrollToTop(final JEditorPane editor) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    editor.scrollRectToVisible(new Rectangle(1, 1, 1, 1));
-                } catch (Exception exc) {}
-            }
+        McVGuiUtils.runOnEDT(() -> {
+            try {
+                editor.scrollRectToVisible(new Rectangle(1, 1, 1, 1));
+            } catch (Exception exc) {}
         });
     }
 
@@ -5868,7 +5897,7 @@ public class GuiUtils extends LayoutUtil {
             boolean visible) {
         if ( !(comp instanceof JComponent)) {
             if ( !comp.getClass().getName().startsWith("javax.swing")) {
-                comp.setVisible(visible);
+                SwingUtilities.invokeLater(() -> comp.setVisible(visible));
             }
         }
         if ( !(comp instanceof Container)) {
@@ -5879,12 +5908,14 @@ public class GuiUtils extends LayoutUtil {
             checkHeavyWeightComponents((JTabbedPane) cont);
             return;
         }
-
-        Component[] comps = cont.getComponents();
-        for (int i = 0; i < comps.length; i++) {
-            Component child = comps[i];
-            toggleHeavyWeightComponents(child, visible);
-        }
+        
+        SwingUtilities.invokeLater(() -> {
+            Component[] comps = cont.getComponents();
+            for (int i = 0; i < comps.length; i++) {
+                Component child = comps[i];
+                toggleHeavyWeightComponents(child, visible);
+            }
+        });
     }
 
     /**
