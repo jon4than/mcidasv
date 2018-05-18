@@ -214,8 +214,8 @@
     <!-- The CLASSPATH specified within McV's manifest 
          Note: if you're going to modify this property, be sure to make similar
          modifications to the "mcv.libs" fileset. -->
-    <property name="jar.base.classpath" value="ncIdv-${ncidv.version}.jar external-${idv.version}.jar gluegen-rt-${jogamp.version}.jar gluegen-${jogamp.version}.jar joal-${jogamp.version}.jar jocl-${jogamp.version}.jar jogl-all-${jogamp.version}.jar sysout-over-slf4j-${sysout.version}.jar miglayout-core-${miglayout.version}.jar miglayout-swing-${miglayout.version}.jar eventbus-${eventbus.version}.jar logback-core-${logback.version}.jar logback-classic-${logback.version}.jar log4j-over-slf4j-${slf4j.version}.jar slf4j-api-${slf4j.version}.jar ${local-idv.jarname}commons-math3-${commons-math.version}.jar rsyntaxtextarea-${rsyntaxtextarea.version}.jar jul-to-slf4j-${slf4j.version}.jar local-visad-${idv.version}.jar visad-${visad.version}.jar idv-${idv.version}.jar ${userguide.jarname} JSatTrak-${jsattrack.version}.jar swingx-common-${swingx.version}.jar j3dcore-${java3d.version}.jar j3dutils-${java3d.version}.jar vecmath-${java3d.version}.jar jython-standalone-${jython.version}.jar juniversalchardet-${juniversalchardet.version}.jar commons-httpclient-${commons-httpclient.version}.jar" />
-
+    <!--<property name="jar.base.classpath" value="ncIdv-${ncidv.version}.jar external-${idv.version}.jar gluegen-rt-${jogamp.version}.jar gluegen-${jogamp.version}.jar joal-${jogamp.version}.jar jocl-${jogamp.version}.jar jogl-all-${jogamp.version}.jar sysout-over-slf4j-${sysout.version}.jar miglayout-core-${miglayout.version}.jar miglayout-swing-${miglayout.version}.jar eventbus-${eventbus.version}.jar logback-core-${logback.version}.jar logback-classic-${logback.version}.jar log4j-over-slf4j-${slf4j.version}.jar slf4j-api-${slf4j.version}.jar ${local-idv.jarname}commons-math3-${commons-math.version}.jar rsyntaxtextarea-${rsyntaxtextarea.version}.jar jul-to-slf4j-${slf4j.version}.jar local-visad-${idv.version}.jar visad-${visad.version}.jar idv-${idv.version}.jar ${userguide.jarname} JSatTrak-${jsattrack.version}.jar swingx-common-${swingx.version}.jar j3dcore-${java3d.version}.jar j3dutils-${java3d.version}.jar vecmath-${java3d.version}.jar jython-standalone-${jython.version}.jar juniversalchardet-${juniversalchardet.version}.jar commons-httpclient-${commons-httpclient.version}.jar" />-->
+    <property name="jar.base.classpath" value="ncIdv-${ncidv.version}.jar external-${idv.version}.jar gluegen-rt-${jogamp.version}.jar gluegen-${jogamp.version}.jar joal-${jogamp.version}.jar jocl-${jogamp.version}.jar jogl-all-${jogamp.version}.jar sysout-over-slf4j-${sysout.version}.jar miglayout-core-${miglayout.version}.jar miglayout-swing-${miglayout.version}.jar eventbus-${eventbus.version}.jar logback-core-${logback.version}.jar logback-classic-${logback.version}.jar log4j-over-slf4j-${slf4j.version}.jar slf4j-api-${slf4j.version}.jar ${local-idv.jarname}commons-math3-${commons-math.version}.jar rsyntaxtextarea-${rsyntaxtextarea.version}.jar jul-to-slf4j-${slf4j.version}.jar local-visad-${idv.version}.jar visad-${visad.version}.jar ${userguide.jarname} JSatTrak-${jsattrack.version}.jar swingx-common-${swingx.version}.jar j3dcore-${java3d.version}.jar j3dutils-${java3d.version}.jar vecmath-${java3d.version}.jar jython-standalone-${jython.version}.jar juniversalchardet-${juniversalchardet.version}.jar commons-httpclient-${commons-httpclient.version}.jar" />
     <!-- List of McIDAS-V JAR files. 
          Note: if you're going to modify this fileset, be sure to make similar
          modifications to the "jar.base.classpath" property. -->
@@ -263,6 +263,14 @@
         <include name="visad-${visad.version}.jar" />
         <include name="external-${idv.version}.jar" />
         <include name="idv-${idv.version}.jar" />
+    </fileset>
+
+    <fileset id="idv.libs-FORJAR" dir="${dist.dir}">
+        <include name="auxdata-${idv.version}.jar" />
+        <include name="local-visad-${idv.version}.jar" />
+        <include name="visad-${visad.version}.jar" />
+        <include name="external-${idv.version}.jar" />
+        <!--<include name="idv-${idv.version}.jar" />-->
     </fileset>
 
     <fileset id="linux_x64.libs" dir="${dist.dir}">
@@ -319,7 +327,7 @@
         <pathelement location="${dist.dir}/${local-idv.jarname}" />
         <fileset refid="mcv.libs" />
         <fileset refid="netcdf.libs" />
-        <fileset refid="idv.libs" />
+        <fileset refid="idv.libs-FORJAR" />
         <fileset refid="linux_x64.libs" />
     </path>
 
@@ -328,7 +336,7 @@
         <pathelement location="${dist.dir}/${local-idv.jarname}" />
         <fileset refid="mcv.libs" />
         <fileset refid="netcdf.libs" />
-        <fileset refid="idv.libs" />
+        <fileset refid="idv.libs-FORJAR" />
         <fileset refid="linux_x86.libs" />
     </path>
 
@@ -337,7 +345,7 @@
         <pathelement location="${dist.dir}/${local-idv.jarname}" />
         <fileset refid="mcv.libs" />
         <fileset refid="netcdf.libs" />
-        <fileset refid="idv.libs" />
+        <fileset refid="idv.libs-FORJAR" />
         <fileset refid="windows_x64.libs" />
     </path>
 
@@ -346,7 +354,7 @@
         <pathelement location="${dist.dir}/${local-idv.jarname}" />
         <fileset refid="mcv.libs" />
         <fileset refid="netcdf.libs" />
-        <fileset refid="idv.libs" />
+        <fileset refid="idv.libs-FORJAR" />
         <fileset refid="windows_x86.libs" />
     </path>
 
@@ -355,7 +363,7 @@
         <pathelement location="${dist.dir}/${local-idv.jarname}" />
         <fileset refid="mcv.libs" />
         <fileset refid="netcdf.libs" />
-        <fileset refid="idv.libs" />
+        <fileset refid="idv.libs-FORJAR" />
         <fileset refid="macosx.libs" />
     </path>
 
@@ -706,8 +714,11 @@
             <manifest>
                 <attribute name="Build-By" value="${user.name}" />
                 <attribute name="Build-Date" value="${jar.TODAY} ${jar.TSTAMP}" />
+                <!--<attribute name="Class-Path"-->
+                <!--value="idv-${idv.version}.jar mcidasv-${mcv.version}.jar mcv_userguide-${mcv.version}.jar" />
+                -->
                 <attribute name="Class-Path"
-                value="idv-${idv.version}.jar mcidasv-${mcv.version}.jar mcv_userguide-${mcv.version}.jar" />
+                           value="${local-idv.jarname} mcidasv-${mcv.version}.jar mcv_userguide-${mcv.version}.jar" />
                 <attribute name="Main-Class" value="${app.smclass}" />
             </manifest>
         </jar>
@@ -763,6 +774,15 @@
     <target name="jar.local-idv" description="Jar the local-idv jar file">
         <!-- <mkdir dir="${dist.dir}" /> -->
         <!-- <delete file="${dist.dir}/${local-idv.jarname}" failonerror="false" /> -->
+        
+        <mkdir dir="${dist.dir}/tmp/local-idv"/>
+        <unzip src="${sharedlib.dir}/idv-${idv.version}.jar" dest="${dist.dir}/tmp/local-idv" />
+        <copy todir="${dist.dir}/tmp/local-idv" preservelastmodified="true">
+            <fileset dir="${build.dir}">
+                <patternset refid="local-idv.includes" />
+            </fileset>
+        </copy>
+        
         <tstamp prefix="jar" />
         <manifestclasspath property="local-idv.class.path" jarfile="${dist.dir}/${local-idv.jarname}">
             <!--<classpath refid="app.classpath" />-->
@@ -772,10 +792,17 @@
             <classpath refid="windows_x86.app.classpath" />
             <classpath refid="macosx.app.classpath" />
         </manifestclasspath>
-        <jar destfile="${dist.dir}/${local-idv.jarname}" index="false">
+        <jar destfile="${dist.dir}/${local-idv.jarname}" index="true">
             <!-- <fileset dir="${base.dir}"> -->
-            <fileset dir="${build.dir}">
-                <patternset refid="local-idv.includes" />
+            
+            
+            <!--<fileset dir="${build.dir}">-->
+                <!--<patternset refid="local-idv.includes" />-->
+            <!--</fileset>-->
+            <fileset dir="${dist.dir}/tmp/local-idv">
+                <patternset>
+                    <include name="**/*"/>
+                </patternset>
             </fileset>
             <manifest>
                 <attribute name="Build-By" value="${user.name}" />
@@ -784,6 +811,9 @@
                 <attribute name="Main-Class" value="${app.mainclass}" />
             </manifest>
         </jar>
+        
+        <delete dir="${dist.dir}/tmp/local-idv" failonerror="false"/>
+        <delete file="${dist.dir/idv-${idv.version}.jar" failonerror="false"/>
     </target>
 
     <!-- Create jar files and documentation -->

@@ -5,6 +5,27 @@ SET MCV_LOGPATH=%MCV_USERPATH%\mcidasv.log
 SET MCV_PARAMS=%*
 SET USE_TEMPUSERPATH=0
 
+SET MCV_JAR=
+FOR /F %%a IN ('DIR /b mcidasv-*.jar 2^>nul') DO SET MCV_JAR=%%a
+IF DEFINED MCV_JAR (
+    GOTO finduserguide
+) ELSE (
+    ECHO "*** ERROR: Could not find McIDAS-V JAR file"
+    GOTO end
+)
+
+:finduserguide
+SET USERGUIDE_JAR=
+FOR /F %%b IN ('DIR /b mcv_userguide-*.jar 2^>nul') DO SET USERGUIDE_JAR=%%b
+IF DEFINED USERGUIDE_JAR (
+    GOTO donefindingjars
+) ELSE (
+    ECHO "*** ERROR: Could not find McIDAS-V User's Guide JAR file"
+    GOTO end
+)
+
+:donefindingjars
+
 REM If _JAVA_OPTIONS is set it takes precedence over command line
 SET _JAVA_OPTIONS=
 
@@ -96,7 +117,7 @@ IF %USE_3DSTUFF%==0 SET ENABLE_3D=false
 
 REM Show the welcome window if needed
 if "%SHOW_WELCOME%"=="1" (
-jre\bin\javaw.exe -Dmcv.userpath="%MCV_USERPATH%" -cp mcidasv.jar edu.wisc.ssec.mcidasv.util.WelcomeWindow
+jre\bin\javaw.exe -Dmcv.userpath="%MCV_USERPATH%" -cp %MCV_JAR% edu.wisc.ssec.mcidasv.util.WelcomeWindow
 if ERRORLEVEL 1 GOTO end
 )
 
@@ -189,7 +210,7 @@ GOTO goodheap
 REM Get the amount of system memory
 echo Reading system configuration...
 SET /a SYS_MEM=0
-FOR /F %%i IN ('jre\bin\java.exe -cp mcidasv.jar edu.wisc.ssec.mcidasv.util.GetMem 2^>NUL') DO SET SYS_MEM=%%i
+FOR /F %%i IN ('jre\bin\java.exe -cp %MCV_JAR% edu.wisc.ssec.mcidasv.util.GetMem 2^>NUL') DO SET SYS_MEM=%%i
 IF %SYS_MEM% LEQ 0 SET HEAP_SIZE=%HEAP_DEFAULT% && GOTO goodheap
 set HEAP_PERCENT=%HEAP_SIZE:~0,-1%
 set /a HEAP_SIZE=%SYS_MEM% * %HEAP_PERCENT% / 100
@@ -206,7 +227,7 @@ IF EXIST "jre\bin\client\classes.jsa" (
 @echo *** notice: not using class data sharing
 )
 
-set MCV_CLASSPATH=%CD%\;%CD%\mcv_userguide.jar;%CD%\mcidasv.jar
+set MCV_CLASSPATH=%CD%\%MCV_JAR%;%CD%\%USERGUIDE_JAR%
 
 set MCV_EXTPATH=-Djava.ext.dirs="jre\lib\ext"
 set MCV_LIBPATH=-Djava.library.path="jre\lib\ext"

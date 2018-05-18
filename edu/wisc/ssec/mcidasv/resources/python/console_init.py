@@ -31,12 +31,13 @@ def _mcvinit_classpath_hack():
     visad_jar = ""
     
     #for entry in classpath.split(System.getProperty('path.separator')):
+    print 'HUH:', SystemState.getMcvJarClasspath()
     for entry in SystemState.getMcvJarClasspath():
         entry = str(entry).replace('file:', '')
         jardir, jar = os.path.split(entry)
         if jar.startswith('mcidasv'):
             mcv_jar = entry
-        elif jar.startswith('idv'):
+        elif jar.startswith('local-idv'):
             idv_jar = entry
         elif jar.startswith('visad'):
             visad_jar = entry
@@ -54,22 +55,25 @@ def _mcvinit_jythonpaths():
         A list of paths suitable for appending to Jython's sys.path.
     """
     jars = _mcvinit_classpath_hack()
-    print "jars:", jars
     return [
         jars['mcidasv'],
-        jars['mcidasv'] + '/edu/wisc/ssec/mcidasv/resources/python',
-        jars['mcidasv'] + '/edu/wisc/ssec/mcidasv/resources/python/utilities',
-        jars['mcidasv'] + '/edu/wisc/ssec/mcidasv/resources/python/linearcombo',
+        os.path.join(jars['mcidasv'], 'edu', 'wisc', 'ssec', 'mcidasv', 'resources', 'python'),
+        os.path.join(jars['mcidasv'], 'edu', 'wisc', 'ssec', 'mcidasv', 'resources', 'python', 'utilities'),
+        os.path.join(jars['mcidasv'], 'edu', 'wisc', 'ssec', 'mcidasv', 'resources', 'python', 'linearcombo'),
         jars['visad'],
-        jars['visad'] + '/visad/python',
+        os.path.join(jars['visad'], 'visad', 'python'),
         jars['idv'],
-        jars['idv'] + '/ucar/unidata/idv/resources/python',
+        os.path.join(jars['idv'], 'ucar', 'unidata', 'idv', 'resources', 'python')
     ]
     
 for jythonpath in _mcvinit_jythonpaths():
     if not jythonpath in sys.path:
         sys.path.append(jythonpath)
         
+print 'SYS.PATH'
+print sys.path
+print ''
+
 # fix for see module
 sys.ps1 = '>>>'
         
@@ -129,7 +133,9 @@ except ImportError, e:
     print 'sys.path contents:'
     for i, path in enumerate(sys.path):
         print i, path
-        
+
+print 'Y HELO THAR'
+
 # _isInteractive's value is controlled by code that calls JythonManager's 
 # "initJythonEnvironment" method. McIDAS-V has the value of _isInteractive
 # *default* to True so that the "interactive mode" will work in every case.

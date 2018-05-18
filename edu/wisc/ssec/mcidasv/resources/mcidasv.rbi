@@ -469,7 +469,9 @@
       <property name="category" value="System" />
     </resource>
     <resource label="Site Library" location="%SITEPATH%/default.py"/>
+    <!--
     <resource label="Application Library" location="%APPPATH%/default.py"/>
+    -->
     <resource label="Constants" location="%IDVPATH%/python/constants.py">
       <property name="category" value="System"/>
     </resource>
@@ -504,9 +506,11 @@
     <resource label="Miscellaneous Routines" location="%IDVPATH%/python/misc.py">
       <property name="category" value="System"/>
     </resource>
+    <!--
     <resource label="Radar Diagnostics" location="%IDVPATH%/python/radar.py">
       <property name="category" value="System"/>
     </resource>
+    -->
     <resource label="Shell Utilities" location="%IDVPATH%/python/shell.py">
       <property name="category" value="System"/>
     </resource>

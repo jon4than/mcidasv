@@ -39,6 +39,7 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -410,8 +411,9 @@ public class SystemState {
      */
     public static List<String> getMcvJarClasspath() {
         // TODO(jon): not really a fan of either method.
-//        ClassLoader cl = ClassLoader.getSystemClassLoader();
-//        URL[] urls = ((URLClassLoader) cl).getURLs();
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        URL[] urls = ((URLClassLoader) cl).getURLs();
+        logger.trace("URLs: {}", urls);
 //        for (URL url : urls) {
 //            Path p = Paths.get(url.toString()).getParent();
 //            jarDir = p.toString();
